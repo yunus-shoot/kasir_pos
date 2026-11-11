@@ -1,0 +1,29 @@
+{% extends "umkm_base.html" %}
+{% block title %}Ringkasan Pembukuan UMKM{% endblock %}
+{% block content %}
+<header class="umkm-heading">
+    <div><h1>Ringkasan Pembukuan</h1><p>Siklus akuntansi usaha dalam satu tempat. Data ini terpisah dari modul kasir.</p></div>
+    <a class="btn btn-primary" href="{{ url_for('main.umkm_journals') }}"><i class="bi bi-plus-lg me-1"></i>Catat Jurnal</a>
+</header>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><div class="umkm-card umkm-stat"><div class="d-flex justify-content-between"><span class="umkm-stat-icon"><i class="bi bi-wallet2"></i></span><span class="umkm-stat-label">Kas &amp; Bank</span></div><div class="umkm-stat-value">Rp {{ cash|id_number }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="umkm-card umkm-stat"><div class="d-flex justify-content-between"><span class="umkm-stat-icon"><i class="bi bi-graph-up-arrow"></i></span><span class="umkm-stat-label">Pendapatan Tahun Ini</span></div><div class="umkm-stat-value">Rp {{ income|id_number }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="umkm-card umkm-stat"><div class="d-flex justify-content-between"><span class="umkm-stat-icon"><i class="bi bi-receipt"></i></span><span class="umkm-stat-label">Laba / (Rugi) Tahun Ini</span></div><div class="umkm-stat-value">Rp {{ profit|id_number }}</div></div></div>
+    <div class="col-6 col-xl-3"><div class="umkm-card umkm-stat"><div class="d-flex justify-content-between"><span class="umkm-stat-icon"><i class="bi bi-journal-check"></i></span><span class="umkm-stat-label">Akun / Jurnal</span></div><div class="umkm-stat-value">{{ accounts }} <small class="text-muted fs-6">/ {{ journal_count }}</small></div></div></div>
+</div>
+<div class="umkm-card">
+    <div class="umkm-card-head"><h2>Jurnal Terakhir</h2><a href="{{ url_for('main.umkm_journals') }}" class="btn btn-sm btn-outline-secondary">Semua jurnal</a></div>
+    {% if recent_journals %}
+    <div class="table-responsive"><table class="table umkm-table">
+        <thead><tr><th>Tanggal</th><th>No. Referensi</th><th>Keterangan</th><th>Jenis</th><th class="text-end">Jumlah</th></tr></thead>
+        <tbody>{% for journal in recent_journals %}<tr>
+            <td>{{ journal.journal_date }}</td><td>{{ journal.reference or '-' }}</td>
+            <td><strong>{{ journal.description }}</strong><div class="small text-muted">{{ journal.lines|length }} baris jurnal</div></td>
+            <td>{{ {'saldo_awal':'Saldo Awal','umum':'Umum','penyesuaian':'Penyesuaian'}[journal.journal_type] }}</td>
+            <td class="text-end">Rp {{ journal.debit|id_number }}</td>
+        </tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="umkm-empty"><i class="bi bi-journal-text fs-3 d-block mb-2"></i>Belum ada jurnal. Mulai dengan memasukkan saldo awal usaha.</div>{% endif %}
+</div>
+<div class="alert alert-info mt-3 small mb-0"><strong>Mulai pembukuan:</strong> masukkan saldo awal secara seimbang, catat transaksi harian, lalu gunakan jurnal penyesuaian untuk penyusutan, perlengkapan, dan koreksi akhir periode.</div>
+{% endblock %}

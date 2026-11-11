@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Transaksi - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .history-page { --history-radius: 20px; }
+    .history-stats { display: grid; gap: 0.9rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 1.35rem; }
+    .history-stat { background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; padding: 1.05rem 1.15rem; position: relative; }
+    .history-stat::after { background: var(--tone-soft); border-radius: 50%; content: ''; height: 80px; opacity: 0.85; position: absolute; right: -34px; top: -34px; width: 80px; }
+    .history-stat-top { align-items: center; display: flex; justify-content: space-between; position: relative; z-index: 1; }
+    .history-stat-icon { align-items: center; background: var(--tone-soft); border-radius: 11px; color: var(--tone); display: inline-flex; font-size: 0.95rem; height: 38px; justify-content: center; width: 38px; }
+    .history-stat-value { color: var(--ink); font-size: 1.28rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: 0.7rem; overflow-wrap: anywhere; position: relative; z-index: 1; }
+    .history-stat-value.is-currency { font-size: 1.05rem; }
+    .history-stat-label { color: var(--gray); font-size: 0.68rem; font-weight: 700; margin-top: 0.2rem; position: relative; z-index: 1; }
+    .history-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--history-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .history-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.9rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .history-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .history-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .history-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .history-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .history-search-wrap { position: relative; width: min(100%, 280px); }
+    .history-search-wrap > i { color: #94a3b8; font-size: 0.82rem; left: 0.85rem; position: absolute; top: 50%; transform: translateY(-50%); }
+    .history-search { background: #fbfcfe; border: 1px solid #dfe5ef; border-radius: 10px; color: var(--ink); font-size: 0.77rem; padding: 0.55rem 0.85rem 0.55rem 2.1rem; transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; width: 100%; }
+    .history-search:focus { background: #fff; border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12); outline: 0; }
+    .history-table { font-size: 0.78rem; margin: 0; }
+    .history-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.75rem 1.15rem; text-transform: uppercase; white-space: nowrap; }
+    .history-table tbody td { border-color: #f1f5f9; padding: 0.85rem 1.15rem; vertical-align: middle; }
+    .history-table tbody tr:hover { background: #fafbff; }
+    .history-code { color: var(--brand-ink); font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.72rem; font-weight: 800; }
+    .history-kasir { align-items: center; display: flex; gap: 0.55rem; min-width: 130px; }
+    .history-avatar { align-items: center; background: var(--brand-soft); border-radius: 50%; color: var(--brand-ink); display: inline-flex; flex: 0 0 30px; font-size: 0.62rem; font-weight: 800; height: 30px; justify-content: center; width: 30px; }
+    .history-total { color: var(--ink); font-weight: 800; white-space: nowrap; }
+    .history-method { align-items: center; border-radius: 999px; display: inline-flex; font-size: 0.62rem; font-weight: 800; gap: 0.3rem; padding: 0.28rem 0.55rem; text-transform: capitalize; white-space: nowrap; }
+    .history-method.is-cash { background: #ecfdf5; color: #047857; }
+    .history-method.is-transfer { background: #eff6ff; color: #1d4ed8; }
+    .history-method.is-qris { background: #eef2ff; color: #4338ca; }
+    .history-method.is-other { background: #f1f5f9; color: #64748b; }
+    .history-date { color: #64748b; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .history-delete-button { align-items: center; background: #fff1f2; border: 1px solid #ffe4e6; border-radius: 9px; color: #be123c; display: inline-flex; font-size: 0.7rem; font-weight: 800; gap: 0.35rem; justify-content: center; min-height: 32px; min-width: 74px; padding: 0.3rem 0.6rem; transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease; }
+    .history-delete-button:hover { background: #e11d48; border-color: #e11d48; box-shadow: 0 5px 12px -4px rgba(225, 29, 72, 0.5); color: #fff; transform: translateY(-1px); }
+    .history-delete-button:active { box-shadow: none; transform: translateY(1px) scale(0.98); }
+    .history-delete-button:focus-visible { outline: 3px solid rgba(225, 29, 72, 0.22); outline-offset: 2px; }
+    .history-empty { color: var(--muted); padding: 3rem 1rem !important; text-align: center; }
+    .history-empty i { color: #cbd5e1; display: block; font-size: 2rem; margin-bottom: 0.6rem; }
+    @media (max-width: 767.98px) {
+        .history-stats { grid-template-columns: 1fr; gap: 0.65rem; }
+        .history-stat { padding: 0.9rem 1rem; }
+        .history-panel-head { padding: 0.95rem 1rem; }
+        .history-search-wrap { width: 100%; }
+    }
+</style>
+
+<main class="history-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Penjualan</span>
+                <h1>Riwayat Transaksi</h1>
+                <p>Lihat transaksi terakhir, cari data, dan cetak struk bila diperlukan.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <a href="{{ url_for('main.transaksi') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Transaksi Baru</a>
+        </div>
+    </div>
+
+    <section class="history-stats" aria-label="Ringkasan transaksi">
+        <article class="history-stat" style="--tone:#6366f1; --tone-soft:#eef2ff;">
+            <div class="history-stat-top"><span class="history-stat-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span></div>
+            <div class="history-stat-value">{{ transactions|length }}</div>
+            <div class="history-stat-label">Total Transaksi Ditampilkan</div>
+        </article>
+        <article class="history-stat" style="--tone:#10b981; --tone-soft:#ecfdf5;">
+            <div class="history-stat-top"><span class="history-stat-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span></div>
+            <div class="history-stat-value is-currency">Rp {{ transactions|sum(attribute='total') | id_number }}</div>
+            <div class="history-stat-label">Total Pendapatan</div>
+        </article>
+        <article class="history-stat" style="--tone:#0ea5e9; --tone-soft:#f0f9ff;">
+            <div class="history-stat-top"><span class="history-stat-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span></div>
+            <div class="history-stat-value" style="font-size:0.95rem;">{% if transactions %}{{ transactions[0].created_at }}{% else %}-{% endif %}</div>
+            <div class="history-stat-label">Transaksi Terakhir</div>
+        </article>
+    </section>
+
+    <section class="history-panel" aria-labelledby="historyPanelTitle">
+        <div class="history-panel-head">
+            <div class="history-panel-title">
+                <span class="history-panel-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                <div>
+                    <h2 id="historyPanelTitle">Daftar Transaksi</h2>
+                    <p>Menampilkan maksimal 50 transaksi terbaru.</p>
+                </div>
+            </div>
+            <div class="history-search-wrap">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input type="search" id="historySearch" class="history-search" placeholder="Cari kode, kasir, metode..." autocomplete="off" aria-label="Cari transaksi">
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table history-table">
+                <thead>
+                    <tr>
+                        <th>Kode</th>
+                        <th>Kasir</th>
+                        <th>Total</th>
+                        <th>Metode</th>
+                        <th>Tanggal</th>
+                        {% if session.get('role') == 'admin' %}<th class="text-end">Aksi</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trx in transactions %}
+                    {% set method = (trx.metode_pembayaran or '')|lower %}
+                    <tr data-history-row data-search="{{ (trx.kode_transaksi ~ ' ' ~ (trx.nama_kasir or '') ~ ' ' ~ (trx.metode_pembayaran or '') ~ ' ' ~ (trx.created_at|string))|lower }}">
+                        <td><span class="history-code">{{ trx.kode_transaksi }}</span></td>
+                        <td>
+                            <div class="history-kasir">
+                                <span class="history-avatar">{{ (trx.nama_kasir or 'K')[:1]|upper }}</span>
+                                <span>{{ trx.nama_kasir }}</span>
+                            </div>
+                        </td>
+                        <td><span class="history-total">Rp {{ trx.total | id_number }}</span></td>
+                        <td>
+                            <span class="history-method {% if 'tunai' in method or 'cash' in method %}is-cash{% elif 'transfer' in method %}is-transfer{% elif 'qris' in method or 'qr' in method %}is-qris{% else %}is-other{% endif %}">
+                                <i class="bi {% if 'tunai' in method or 'cash' in method %}bi-cash{% elif 'transfer' in method %}bi-bank{% elif 'qris' in method or 'qr' in method %}bi-qr-code{% else %}bi-wallet2{% endif %}" aria-hidden="true"></i>
+                                {{ trx.metode_pembayaran }}
+                            </span>
+                        </td>
+                        <td><span class="history-date">{{ trx.created_at }}</span></td>
+                        {% if session.get('role') == 'admin' %}
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('main.hapus_transaksi') }}" class="d-inline" data-confirm-message="Transaksi {{ trx.kode_transaksi }} senilai Rp {{ trx.total | id_number }} akan dihapus permanen." data-confirm-title="Hapus Transaksi" data-confirm-button="Ya, Hapus">
+                                <input type="hidden" name="kode_transaksi" value="{{ trx.kode_transaksi }}">
+                                <button type="submit" class="history-delete-button"><i class="bi bi-trash3" aria-hidden="true"></i><span>Hapus</span></button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    <tr id="historyNoResults" {% if transactions %}hidden{% endif %}>
+                        <td colspan="{{ 6 if session.get('role') == 'admin' else 5 }}" class="history-empty">
+                            <i class="bi bi-inbox" aria-hidden="true"></i>
+                            <span id="historyEmptyText">Tidak ada transaksi.</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (() => {
+        const searchInput = document.getElementById('historySearch');
+        const rows = Array.from(document.querySelectorAll('[data-history-row]'));
+        const noResults = document.getElementById('historyNoResults');
+        const emptyText = document.getElementById('historyEmptyText');
+        if (!searchInput || !noResults) return;
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            let visible = 0;
+
+            rows.forEach(row => {
+                const matches = !query || (row.dataset.search || '').includes(query);
+                row.hidden = !matches;
+                if (matches) visible += 1;
+            });
+
+            noResults.hidden = visible !== 0;
+            if (emptyText) {
+                emptyText.textContent = query
+                    ? 'Tidak ada transaksi yang cocok dengan pencarian.'
+                    : 'Tidak ada transaksi.';
+            }
+        });
+    })();
+</script>
+{% endblock %}

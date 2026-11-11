@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Struk - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .receipt-screen-heading { align-items: center; display: flex; flex-wrap: wrap; gap: 0.9rem; justify-content: space-between; margin: 0 auto 1.1rem; width: min(100%, 640px); }
+    .receipt-screen-heading-copy { align-items: center; display: flex; gap: 0.8rem; }
+    .receipt-screen-heading-icon { align-items: center; background: var(--brand-gradient); border-radius: 13px; box-shadow: 0 12px 24px -10px rgba(99, 102, 241, 0.65); color: #fff; display: inline-flex; flex: 0 0 44px; font-size: 1.08rem; height: 44px; justify-content: center; width: 44px; }
+    .receipt-screen-heading h1 { color: var(--ink); font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+    .receipt-screen-heading p { color: var(--gray); font-size: 0.72rem; margin: 0.12rem 0 0; }
+    .receipt-page { color: #111827; font-weight: 700; line-height: 1.45; margin: 0 auto; max-width: 100%; width: min(100%, 420px); }
+    .receipt-paper { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 18px 40px -26px rgba(15, 23, 42, 0.35); box-sizing: border-box; font-weight: 700; margin: 0 auto; max-width: 100%; padding: 4mm; width: min(var(--receipt-width, 58mm), 100%); }
+    .receipt-paper * { font-weight: 700; }
+    .receipt-size-selector { align-items: center; background: #fff; border: 1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow-xs); display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin: 0 auto 1rem; max-width: 100%; padding: 0.38rem 0.5rem; width: max-content; }
+    .receipt-size-selector-label { color: #475569; font-size: 0.7rem; font-weight: 800; padding: 0 0.35rem; text-align: center; }
+    .receipt-size-button { border-radius: 999px; font-size: 0.7rem; min-height: 32px; min-width: 4.5rem; padding: 0.32rem 0.7rem; }
+    .receipt-brand { display: block; height: auto; margin: 0 auto 2mm; max-height: 9mm; max-width: 28mm; object-fit: contain; width: auto; }
+    .receipt-muted { color: #111827; font-size: 0.68rem; line-height: 1.4; }
+    .receipt-divider { border: 0; border-top: 1px dashed #64748b; margin: 0.6rem 0; opacity: 1; }
+    .receipt-meta { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; color: #111827; font-size: 0.68rem; padding: 0.55rem; }
+    .receipt-meta > div { display: grid !important; grid-template-columns: 34% minmax(0, 1fr); gap: 0.3rem !important; }
+    .receipt-meta > div + div { margin-top: 0.35rem !important; }
+    .receipt-meta > div > :last-child { min-width: 0; overflow-wrap: anywhere; text-align: right; }
+    .receipt-meta .text-muted { color: #374151 !important; font-weight: 700; }
+    .receipt-table { font-size: 0.68rem; margin-bottom: 0; table-layout: fixed; width: 100%; }
+    .receipt-table thead th { background: transparent; border-bottom: 1px solid #94a3b8; color: #111827; font-size: 0.62rem; padding: 0.4rem 0; text-transform: uppercase; }
+    .receipt-table tbody td { border-bottom: 1px solid #cbd5e1; color: #111827; padding: 0.45rem 0; vertical-align: top; }
+    .receipt-table th:nth-child(2), .receipt-table td:nth-child(2) { width: 13%; }
+    .receipt-table th:nth-child(3), .receipt-table td:nth-child(3) { width: 36%; }
+    .receipt-item-name { color: #111827; font-weight: 800; overflow-wrap: anywhere; }
+    .receipt-item-code { color: #1f2937; display: block; font-size: 0.62rem; margin-top: 0.15rem; overflow-wrap: anywhere; }
+    .receipt-summary { color: #111827; font-size: 0.68rem; }
+    .receipt-summary .d-flex { gap: 0.35rem; }
+    .receipt-summary .d-flex > :last-child { text-align: right; }
+    .receipt-total { border-top: 1px solid var(--brand-border); color: var(--brand-ink); font-size: 0.82rem; font-weight: 900; margin-top: 0.45rem; padding-top: 0.5rem; }
+    .receipt-actions { display: grid; gap: 0.45rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 1rem auto 0; max-width: 100%; width: min(100%, 420px); }
+    .receipt-action { align-items: center; border: 1px solid transparent; border-radius: 9px; box-shadow: 0 4px 10px rgba(31, 47, 77, 0.13); color: #fff; cursor: pointer; display: inline-flex; font-size: clamp(0.58rem, 2.7vw, 0.72rem); font-weight: 800; gap: 0.35rem; justify-content: center; min-height: 42px; min-width: 0; padding: 0.55rem 0.35rem; text-decoration: none; transition: box-shadow 0.18s ease, filter 0.18s ease, transform 0.18s ease; white-space: nowrap; }
+    .receipt-action i { font-size: 0.78rem; }
+    .receipt-action:hover { box-shadow: 0 7px 15px rgba(31, 47, 77, 0.2); color: #fff; filter: brightness(1.06); transform: translateY(-2px); }
+    .receipt-action:active { box-shadow: 0 2px 5px rgba(31, 47, 77, 0.16); transform: translateY(0); }
+    .receipt-action:focus-visible { outline: 3px solid rgba(99, 102, 241, 0.35); outline-offset: 2px; }
+    .receipt-action-share { background: linear-gradient(135deg, #10b981, #078b70); box-shadow: 0 4px 12px rgba(8, 123, 103, 0.22); }
+    .receipt-action-print { background: linear-gradient(135deg, #7775f5, #5145db); box-shadow: 0 4px 12px rgba(81, 69, 219, 0.22); }
+    .receipt-action-back { background: #fff; border-color: #d6deea; box-shadow: 0 3px 8px rgba(31, 47, 77, 0.07); color: #526176; }
+    .receipt-action-back:hover { background: #f8fafc; border-color: #b9c5d5; color: #334155; }
+    @media (max-width: 340px) { .receipt-actions { gap: 0.3rem; } .receipt-action { gap: 0.22rem; padding-left: 0.2rem; padding-right: 0.2rem; } .receipt-action i { font-size: 0.68rem; } }
+    @media print {
+        @page { margin: 0; size: 58mm auto; }
+        body { background: #fff !important; }
+        body > nav, body > footer, .receipt-size-selector, .receipt-actions, .receipt-screen-heading, .alert { display: none !important; }
+        .page-content { margin: 0 !important; max-width: none !important; padding: 0 !important; }
+        .receipt-page { margin: 0; max-width: none; width: auto; }
+        .receipt-paper { border: 0; border-radius: 0; box-shadow: none; max-width: none; padding: 3mm; width: 100%; }
+        .receipt-paper, .receipt-paper * { color: #000 !important; font-weight: 700 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .receipt-item-name, .receipt-total { font-weight: 900 !important; }
+        .receipt-meta { background: #fff; }
+        .table-responsive { overflow: visible !important; }
+    }
+    @media (max-width: 575px) {
+        .receipt-paper { border-radius: 0; padding: 5mm; }
+    }
+</style>
+
+<main class="receipt-page">
+    <div class="receipt-screen-heading">
+        <div class="receipt-screen-heading-copy">
+            <span class="receipt-screen-heading-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span>
+            <div>
+                <h1>Struk Transaksi</h1>
+                <p>Bagikan struk sebagai gambar PNG atau cetak sesuai ukuran kertas.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="receipt-size-selector" role="group" aria-label="Pilih ukuran kertas struk">
+        <span class="receipt-size-selector-label">Ukuran struk:</span>
+        <button type="button" class="btn btn-outline-primary receipt-size-button" data-receipt-size="58" aria-pressed="true">58 mm</button>
+        <button type="button" class="btn btn-outline-primary receipt-size-button" data-receipt-size="80" aria-pressed="false">80 mm</button>
+    </div>
+
+    <div class="receipt-paper">
+        <header class="text-center">
+            {% if settings.logo %}
+            <img class="receipt-brand" src="{{ url_for('static', filename='uploads/' ~ settings.logo) }}" alt="Logo {{ settings.nama_toko or 'toko' }}">
+            {% else %}
+            <div class="receipt-brand">{{ settings.nama_toko or 'Kasir POS' }}</div>
+            {% endif %}
+            {% if settings.alamat %}<div class="receipt-muted mt-2">{{ settings.alamat }}</div>{% endif %}
+            {% if settings.telepon %}<div class="receipt-muted">{{ settings.telepon }}</div>{% endif %}
+        </header>
+
+        <hr class="receipt-divider">
+
+        <div class="receipt-meta">
+            <div class="d-flex justify-content-between gap-3"><span class="text-muted">Kode transaksi</span><strong>{{ transaction.kode_transaksi }}</strong></div>
+            <div class="d-flex justify-content-between gap-3 mt-2"><span class="text-muted">Tanggal</span><span>{{ transaction.tanggal }}</span></div>
+            <div class="d-flex justify-content-between gap-3 mt-2"><span class="text-muted">Kasir</span><span>{{ transaction.nama_kasir }}</span></div>
+            {% if transaction.nama_pelanggan %}<div class="d-flex justify-content-between gap-3 mt-2"><span class="text-muted">Pelanggan</span><span class="receipt-customer-name">{{ transaction.nama_pelanggan }}</span></div>{% endif %}
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table receipt-table">
+                <thead>
+                    <tr><th>Produk</th><th class="text-center">Qty</th><th class="text-end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in transaction.detail %}
+                    <tr>
+                        <td><span class="receipt-item-name">{{ item.nama_barang }}</span><span class="receipt-item-code">{{ item.kode_barang }}</span></td>
+                        <td class="text-center">{{ item.jumlah }}</td>
+                        <td class="text-end">Rp {{ item.subtotal | id_number }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <hr class="receipt-divider">
+
+        <div class="receipt-summary">
+            <div class="d-flex justify-content-between"><span>Subtotal</span><span>Rp {{ (transaction.total + transaction.diskon_nominal) | id_number }}</span></div>
+            {% if transaction.diskon_nominal and transaction.diskon_nominal > 0 %}<div class="d-flex justify-content-between mt-2"><span>Diskon Member ({{ transaction.diskon_persen }}%)</span><span>-Rp {{ transaction.diskon_nominal | id_number }}</span></div>{% endif %}
+            <div class="d-flex justify-content-between mt-2"><span>Pembayaran</span><span>Rp {{ transaction.jumlah_bayar | id_number }}</span></div>
+            <div class="d-flex justify-content-between mt-2"><span>Kembalian</span><span>Rp {{ transaction.kembalian | id_number }}</span></div>
+            <div class="receipt-total d-flex justify-content-between"><span>Total Bayar</span><span>Rp {{ transaction.total | id_number }}</span></div>
+        </div>
+
+        <div class="text-center receipt-muted receipt-footer mt-4">
+            {{ settings.footer_message or 'Terima kasih atas kunjungan Anda' }}
+        </div>
+
+    </div>
+    <section class="receipt-actions" aria-label="Aksi struk">
+        <button type="button" class="receipt-action receipt-action-share" id="shareReceipt">
+            <i class="bi bi-share-fill" aria-hidden="true"></i><span>Bagikan</span>
+        </button>
+        <button type="button" class="receipt-action receipt-action-print" onclick="window.print()">
+            <i class="bi bi-printer" aria-hidden="true"></i><span>Cetak Struk</span>
+        </button>
+        <a href="{{ url_for('main.dashboard') }}" class="receipt-action receipt-action-back">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i><span>Kembali</span>
+        </a>
+    </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+    (() => {
+        const receiptPage = document.querySelector('.receipt-page');
+        const receipt = document.querySelector('.receipt-paper');
+        const shareReceiptButton = document.getElementById('shareReceipt');
+        const sizeButtons = document.querySelectorAll('.receipt-size-button');
+        const transactionCode = {{ transaction.kode_transaksi | tojson }};
+        const printPageStyle = document.createElement('style');
+        printPageStyle.id = 'receipt-print-page-size';
+        document.head.append(printPageStyle);
+
+        function downloadReceiptImage(blob) {
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = `struk-${transactionCode}.png`;
+            document.body.append(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+        }
+
+        shareReceiptButton.addEventListener('click', async () => {
+            const buttonLabel = shareReceiptButton.querySelector('span');
+            const originalLabel = buttonLabel.textContent;
+            shareReceiptButton.disabled = true;
+            buttonLabel.textContent = 'Menyiapkan PNG...';
+
+            try {
+                if (typeof window.html2canvas !== 'function') {
+                    throw new Error('Renderer gambar struk belum tersedia.');
+                }
+
+                await document.fonts.ready;
+                const selectedSize = receiptPage.style.getPropertyValue('--receipt-width') || '58mm';
+                const canvas = await window.html2canvas(receipt, {
+                    backgroundColor: '#ffffff',
+                    scale: 3,
+                    useCORS: true,
+                    onclone: (clonedDocument) => {
+                        const clonedReceipt = clonedDocument.querySelector('.receipt-paper');
+                        clonedReceipt.style.setProperty('width', selectedSize, 'important');
+                        clonedReceipt.style.setProperty('max-width', 'none', 'important');
+                        clonedReceipt.style.setProperty('padding', '3mm', 'important');
+                        clonedReceipt.style.setProperty('border', '0', 'important');
+                        clonedReceipt.style.setProperty('border-radius', '0', 'important');
+                        clonedReceipt.style.setProperty('box-shadow', 'none', 'important');
+                        clonedReceipt.style.setProperty('color', '#000', 'important');
+                        clonedReceipt.querySelectorAll('*').forEach((element) => {
+                            element.style.setProperty('color', '#000', 'important');
+                            element.style.setProperty('font-weight', '700', 'important');
+                        });
+                        const metadata = clonedReceipt.querySelector('.receipt-meta');
+                        metadata.style.setProperty('background', '#fff', 'important');
+                    }
+                });
+                const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+                if (!blob) {
+                    throw new Error('Gambar struk PNG gagal dibuat.');
+                }
+
+                const image = typeof File === 'function'
+                    ? new File([blob], `struk-${transactionCode}.png`, { type: 'image/png' })
+                    : null;
+                if (image && navigator.share && navigator.canShare?.({ files: [image] })) {
+                    await navigator.share({
+                        title: 'Struk Transaksi',
+                        text: `Struk transaksi ${transactionCode}`,
+                        files: [image]
+                    });
+                    return;
+                }
+
+                downloadReceiptImage(blob);
+                window.showAppToast('Struk PNG diunduh. Lampirkan gambar ini saat membagikan.', 'success');
+            } catch (error) {
+                if (error?.name !== 'AbortError') {
+                    window.showAppToast('Struk PNG tidak dapat dibuat atau dibagikan. Coba lagi.', 'danger');
+                }
+            } finally {
+                shareReceiptButton.disabled = false;
+                buttonLabel.textContent = originalLabel;
+            }
+        });
+
+        sizeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const size = button.dataset.receiptSize;
+                if (size !== '58' && size !== '80') return;
+
+                receiptPage.style.setProperty('--receipt-width', `${size}mm`);
+                printPageStyle.textContent = `@page { size: ${size}mm auto; margin: 0; }`;
+                sizeButtons.forEach((sizeButton) => {
+                    const selected = sizeButton === button;
+                    sizeButton.setAttribute('aria-pressed', String(selected));
+                    sizeButton.classList.toggle('btn-primary', selected);
+                    sizeButton.classList.toggle('btn-outline-primary', !selected);
+                });
+            });
+        });
+    })();
+</script>
+{% endblock %}

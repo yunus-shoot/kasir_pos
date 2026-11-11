@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Kategori - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .category-page { --category-radius: 20px; }
+    .category-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--category-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .category-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .category-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .category-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .category-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .category-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .category-count { background: var(--brand-soft); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-ink); font-size: 0.65rem; font-weight: 800; padding: 0.3rem 0.65rem; white-space: nowrap; }
+    .category-form-body { padding: 1.3rem; }
+    .category-table { font-size: 0.78rem; margin: 0; }
+    .category-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.75rem 1.15rem; text-transform: uppercase; white-space: nowrap; }
+    .category-table tbody td { border-color: #f1f5f9; padding: 0.85rem 1.15rem; vertical-align: middle; }
+    .category-table tbody tr:hover { background: #fafbff; }
+    .category-identity { align-items: center; display: flex; gap: 0.75rem; min-width: 170px; }
+    .category-avatar { align-items: center; background: #eef2ff; border-radius: 11px; color: #4338ca; display: inline-flex; flex: 0 0 36px; font-size: 0.8rem; font-weight: 800; height: 36px; justify-content: center; width: 36px; }
+    .category-avatar.tone-1 { background: #ecfdf5; color: #047857; }
+    .category-avatar.tone-2 { background: #fffbeb; color: #b45309; }
+    .category-avatar.tone-3 { background: #f0f9ff; color: #0369a1; }
+    .category-avatar.tone-4 { background: #fff1f2; color: #be123c; }
+    .category-name { color: var(--ink); font-weight: 800; }
+    .category-description { color: var(--muted); font-size: 0.72rem; line-height: 1.5; max-width: 260px; }
+    .category-actions { align-items: center; display: flex; gap: 0.35rem; justify-content: flex-end; }
+    .category-action { align-items: center; aspect-ratio: 1; border: 1px solid transparent; border-radius: 9px; display: inline-flex; font-size: 0.8rem; height: 32px; justify-content: center; padding: 0; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease; width: 32px; }
+    .category-action:hover { transform: translateY(-1px); }
+    .category-action-edit { background: #eef2ff; border-color: #e0e7ff; color: #4338ca; }
+    .category-action-edit:hover { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+    .category-action-delete { background: #fff1f2; border-color: #ffe4e6; color: #be123c; }
+    .category-action-delete:hover { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
+    .category-empty { color: var(--muted); padding: 2.75rem 1rem !important; text-align: center; }
+    .category-empty i { color: #cbd5e1; display: block; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .category-tip { align-items: flex-start; background: linear-gradient(135deg, #f8faff, #eef2ff); border: 1px solid var(--brand-border); border-radius: 13px; color: #475569; display: flex; font-size: 0.7rem; gap: 0.55rem; line-height: 1.55; margin-top: 1rem; padding: 0.75rem 0.85rem; }
+    .category-tip i { color: var(--brand-ink); flex: 0 0 auto; margin-top: 0.1rem; }
+    @media (max-width: 767.98px) {
+        .category-panel-head { padding: 0.95rem 1rem; }
+        .category-form-body { padding: 1.05rem; }
+    }
+</style>
+
+<main class="category-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-tags" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Manajemen</span>
+                <h1>Kategori</h1>
+                <p>Tambah dan atur kategori produk agar katalog lebih rapi.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-collection" aria-hidden="true"></i>{{ kategori_list|length }} kategori</span>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-7">
+            <section class="category-panel" aria-labelledby="categoryListTitle">
+                <div class="category-panel-head">
+                    <div class="category-panel-title">
+                        <span class="category-panel-icon"><i class="bi bi-tags" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="categoryListTitle">Daftar Kategori</h2>
+                            <p>Kategori yang tersedia di katalog.</p>
+                        </div>
+                    </div>
+                    <span class="category-count">{{ kategori_list|length }} kategori</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table category-table">
+                        <thead>
+                            <tr><th>Nama Kategori</th><th>Deskripsi</th><th class="text-end">Aksi</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for kategori in kategori_list %}
+                            <tr>
+                                <td>
+                                    <div class="category-identity">
+                                        <span class="category-avatar tone-{{ loop.index0 % 5 }}"><i class="bi bi-tag-fill" aria-hidden="true"></i></span>
+                                        <span class="category-name">{{ kategori.nama_kategori }}</span>
+                                    </div>
+                                </td>
+                                <td><span class="category-description">{{ kategori.deskripsi or 'Tanpa deskripsi' }}</span></td>
+                                <td>
+                                    <div class="category-actions">
+                                        <button type="button" class="category-action category-action-edit" title="Edit {{ kategori.nama_kategori }}" aria-label="Edit kategori {{ kategori.nama_kategori }}" data-bs-toggle="modal" data-bs-target="#editModal{{ kategori.id }}">
+                                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                        </button>
+                                        <form method="POST" action="{{ url_for('main.kategori') }}" class="d-inline" data-confirm-message="Kategori {{ kategori.nama_kategori }} akan dihapus." data-confirm-title="Hapus Kategori" data-confirm-button="Ya, Hapus">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="kategori_id" value="{{ kategori.id }}">
+                                            <button type="submit" class="category-action category-action-delete" title="Hapus {{ kategori.nama_kategori }}" aria-label="Hapus kategori {{ kategori.nama_kategori }}">
+                                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="category-empty"><i class="bi bi-tags" aria-hidden="true"></i>Belum ada kategori. Tambahkan kategori pertama di samping.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% for kategori in kategori_list %}
+                <div class="modal fade" id="editModal{{ kategori.id }}" tabindex="-1" aria-labelledby="editCategoryTitle{{ kategori.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.kategori') }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editCategoryTitle{{ kategori.id }}"><i class="bi bi-pencil-square me-2 text-primary" aria-hidden="true"></i>Edit Kategori</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit">
+                                    <input type="hidden" name="kategori_id" value="{{ kategori.id }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nama Kategori</label>
+                                        <input type="text" name="nama_kategori" class="form-control" data-auto-uppercase value="{{ kategori.nama_kategori }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Deskripsi</label>
+                                        <textarea name="deskripsi" class="form-control" rows="3">{{ kategori.deskripsi }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <section class="category-panel" aria-labelledby="categoryAddTitle">
+                <div class="category-panel-head">
+                    <div class="category-panel-title">
+                        <span class="category-panel-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="categoryAddTitle">Tambah Kategori</h2>
+                            <p>Buat kelompok produk baru.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="category-form-body">
+                    <form method="POST" action="{{ url_for('main.kategori') }}">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <label class="form-label" for="categoryName">Nama Kategori</label>
+                            <input id="categoryName" type="text" name="nama_kategori" class="form-control" data-auto-uppercase placeholder="Contoh: Minuman" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="categoryDescription">Deskripsi</label>
+                            <textarea id="categoryDescription" name="deskripsi" class="form-control" rows="4" placeholder="Deskripsi singkat kategori (opsional)"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100"><i class="bi bi-tags me-2" aria-hidden="true"></i>Tambah Kategori</button>
+                    </form>
+                    <div class="category-tip">
+                        <i class="bi bi-lightbulb-fill" aria-hidden="true"></i>
+                        <span>Gunakan nama kategori yang singkat dan konsisten agar produk mudah dicari saat transaksi.</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}

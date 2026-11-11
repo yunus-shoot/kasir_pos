@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-page { --dash-ink: #0f172a; }
+    .dash-hero {
+        align-items: stretch;
+        background: radial-gradient(120% 160% at 100% 0%, #a855f7 0%, #7c3aed 34%, #4f46e5 68%, #4338ca 100%);
+        border-radius: 24px;
+        box-shadow: 0 30px 60px -30px rgba(79, 70, 229, 0.65);
+        color: #ffffff;
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+        margin-bottom: 1.35rem;
+        overflow: hidden;
+        padding: 2rem 2.15rem;
+        position: relative;
+    }
+    .dash-hero::before {
+        background-image: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px);
+        background-size: 20px 20px;
+        content: '';
+        inset: 0;
+        opacity: .5;
+        pointer-events: none;
+        position: absolute;
+    }
+    .dash-hero-copy { position: relative; z-index: 1; }
+    .dash-hero-badge {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 0.66rem;
+        font-weight: 800;
+        gap: 0.4rem;
+        letter-spacing: 0.08em;
+        padding: 0.4rem 0.75rem;
+        text-transform: uppercase;
+    }
+    .dash-hero-badge i { color: #fde68a; }
+    .dash-hero h1 {
+        color: #ffffff;
+        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.15;
+        margin: 0.9rem 0 0.5rem;
+    }
+    .dash-hero p {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.84rem;
+        line-height: 1.65;
+        margin: 0;
+        max-width: 460px;
+    }
+    .dash-hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.4rem; }
+    .dash-btn {
+        align-items: center;
+        border-radius: 12px;
+        display: inline-flex;
+        font-size: 0.78rem;
+        font-weight: 800;
+        gap: 0.45rem;
+        padding: 0.65rem 1rem;
+        text-decoration: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+    .dash-btn:hover { transform: translateY(-2px); }
+    .dash-btn-light {
+        background: #ffffff;
+        box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.5);
+        color: var(--brand-ink);
+    }
+    .dash-btn-light:hover { background: #f8faff; color: var(--brand-ink); }
+    .dash-btn-ghost {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+    }
+    .dash-btn-ghost:hover { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+    .dash-hero-visual {
+        align-items: center;
+        display: flex;
+        justify-content: center;
+        min-height: 220px;
+        position: relative;
+        z-index: 1;
+    }
+    .dash-orb {
+        border-radius: 50%;
+        pointer-events: none;
+        position: absolute;
+    }
+    .dash-orb-1 {
+        background: rgba(255, 255, 255, 0.12);
+        height: 190px;
+        right: 6%;
+        top: -40px;
+        width: 190px;
+    }
+    .dash-orb-2 {
+        background: rgba(20, 184, 166, 0.28);
+        bottom: -50px;
+        height: 150px;
+        left: 4%;
+        width: 150px;
+    }
+    .dash-receipt {
+        backdrop-filter: blur(6px);
+        background: rgba(255, 255, 255, 0.13);
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        border-radius: 20px;
+        box-shadow: 0 24px 50px -24px rgba(15, 23, 42, 0.65);
+        max-width: 290px;
+        padding: 1.15rem 1.2rem;
+        transform: rotate(-2deg);
+        width: 100%;
+    }
+    .dash-receipt-top {
+        align-items: center;
+        color: rgba(255, 255, 255, 0.82);
+        display: flex;
+        font-size: 0.66rem;
+        font-weight: 700;
+        gap: 0.5rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .dash-receipt-icon {
+        align-items: center;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: inline-flex;
+        height: 28px;
+        justify-content: center;
+        width: 28px;
+    }
+    .dash-receipt > strong {
+        display: block;
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin-top: 0.55rem;
+        overflow-wrap: anywhere;
+    }
+    .dash-receipt-divider {
+        background: rgba(255, 255, 255, 0.18);
+        height: 1px;
+        margin: 0.85rem 0 0.7rem;
+    }
+    .dash-receipt-row {
+        align-items: center;
+        color: rgba(255, 255, 255, 0.78);
+        display: flex;
+        font-size: 0.72rem;
+        justify-content: space-between;
+        padding: 0.24rem 0;
+    }
+    .dash-receipt-row span { align-items: center; display: inline-flex; gap: 0.4rem; }
+    .dash-receipt-row b { color: #ffffff; font-weight: 800; }
+    .dash-receipt-badge {
+        align-items: center;
+        background: rgba(16, 185, 129, 0.24);
+        border: 1px solid rgba(110, 231, 183, 0.4);
+        border-radius: 999px;
+        color: #d1fae5;
+        display: inline-flex;
+        font-size: 0.62rem;
+        font-weight: 800;
+        gap: 0.35rem;
+        margin-top: 0.8rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .dash-stats {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 1.35rem;
+    }
+    .dash-stat {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        padding: 1.15rem 1.2rem;
+        position: relative;
+        transition: box-shadow 0.22s ease, transform 0.22s ease;
+    }
+    .dash-stat::after {
+        background: var(--tone-soft);
+        border-radius: 50%;
+        content: '';
+        height: 90px;
+        opacity: 0.8;
+        pointer-events: none;
+        position: absolute;
+        right: -38px;
+        top: -38px;
+        width: 90px;
+    }
+    .dash-stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+    .dash-stat-top { align-items: center; display: flex; justify-content: space-between; position: relative; z-index: 1; }
+    .dash-stat-icon {
+        align-items: center;
+        background: var(--tone-soft);
+        border-radius: 12px;
+        color: var(--tone);
+        display: inline-flex;
+        font-size: 1.05rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+    .dash-stat-tag {
+        background: var(--tone-soft);
+        border-radius: 999px;
+        color: var(--tone-deep);
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        padding: 0.28rem 0.55rem;
+    }
+    .dash-stat-value {
+        color: var(--dash-ink);
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+        margin-top: 0.9rem;
+        overflow-wrap: anywhere;
+        position: relative;
+        z-index: 1;
+    }
+    .dash-stat-value.is-currency { font-size: 1.22rem; }
+    .dash-stat-label { color: var(--gray); font-size: 0.72rem; font-weight: 700; margin-top: 0.25rem; position: relative; z-index: 1; }
+    .dash-grid {
+        display: grid;
+        gap: 1.1rem;
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
+    }
+    .dash-panel {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        padding: 1.4rem;
+    }
+    .dash-panel-head { align-items: flex-start; display: flex; gap: 1rem; justify-content: space-between; margin-bottom: 1.1rem; }
+    .dash-kicker { color: var(--muted); display: block; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .dash-panel-head h2 { color: var(--dash-ink); font-size: 1.02rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.15rem 0 0; }
+    .dash-quick-grid { display: grid; gap: 0.7rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dash-quick {
+        align-items: center;
+        background: #fbfcff;
+        border: 1px solid #eef2f9;
+        border-radius: 15px;
+        color: var(--dash-ink);
+        display: flex;
+        gap: 0.8rem;
+        min-height: 82px;
+        padding: 0.85rem 0.95rem;
+        position: relative;
+        text-decoration: none;
+        transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+    .dash-quick:hover {
+        background: #ffffff;
+        border-color: var(--tone-soft);
+        box-shadow: 0 14px 28px -18px rgba(15, 23, 42, 0.3);
+        color: var(--dash-ink);
+        transform: translateY(-2px);
+    }
+    .dash-quick-icon {
+        align-items: center;
+        background: var(--tone-soft);
+        border-radius: 12px;
+        color: var(--tone);
+        display: inline-flex;
+        flex: 0 0 42px;
+        font-size: 1.05rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+    .dash-quick-text { display: flex; flex-direction: column; min-width: 0; }
+    .dash-quick-text strong { color: var(--dash-ink); font-size: 0.8rem; font-weight: 800; }
+    .dash-quick-text small { color: var(--muted); font-size: 0.66rem; font-weight: 600; }
+    .dash-quick-arrow { color: #cbd5e1; font-size: 0.75rem; margin-left: auto; transition: color 0.18s ease, transform 0.18s ease; }
+    .dash-quick:hover .dash-quick-arrow { color: var(--tone); transform: translate(1px, -1px); }
+    .dash-attention-pill {
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 800;
+        padding: 0.32rem 0.6rem;
+        white-space: nowrap;
+    }
+    .dash-attention-pill.is-danger { background: #fff1f2; color: #be123c; }
+    .dash-attention-pill.is-safe { background: #ecfdf5; color: #047857; }
+    .dash-attention-body { border-top: 1px solid #f1f5f9; padding-top: 1.1rem; }
+    .dash-attention-number {
+        color: var(--dash-ink);
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 1;
+    }
+    .dash-attention-body p { color: var(--gray); font-size: 0.76rem; margin: 0.35rem 0 0.9rem; }
+    .dash-attention-link {
+        align-items: center;
+        color: var(--brand-ink);
+        display: inline-flex;
+        font-size: 0.75rem;
+        font-weight: 800;
+        gap: 0.4rem;
+        text-decoration: none;
+    }
+    .dash-attention-link:hover { color: var(--primary-dark); }
+    .dash-attention-link i { transition: transform 0.18s ease; }
+    .dash-attention-link:hover i { transform: translateX(3px); }
+    .dash-tip {
+        align-items: flex-start;
+        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        border: 1px solid #fde68a;
+        border-radius: 13px;
+        color: #92400e;
+        display: flex;
+        font-size: 0.68rem;
+        font-weight: 600;
+        gap: 0.5rem;
+        line-height: 1.55;
+        margin-top: 1.1rem;
+        padding: 0.7rem 0.8rem;
+    }
+    .dash-tip i { color: #d97706; flex: 0 0 auto; margin-top: 0.1rem; }
+    @media (max-width: 1199.98px) {
+        .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 991.98px) {
+        .dash-hero { grid-template-columns: 1fr; padding: 1.7rem 1.5rem; }
+        .dash-hero-visual { display: none; }
+        .dash-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 575.98px) {
+        .dash-hero { border-radius: 20px; padding: 1.4rem 1.25rem; }
+        .dash-hero p { font-size: 0.78rem; }
+        .dash-stats { gap: 0.65rem; }
+        .dash-stat { padding: 0.95rem 1rem; }
+        .dash-stat-value { font-size: 1.3rem; }
+        .dash-stat-value.is-currency { font-size: 1.02rem; }
+        .dash-stat-label { font-size: 0.66rem; }
+        .dash-stat-tag { display: none; }
+        .dash-panel { padding: 1.1rem; }
+        .dash-quick-grid { grid-template-columns: 1fr; }
+        .dash-quick { min-height: 72px; }
+    }
+</style>
+
+<main class="dashboard-page">
+    <section class="dash-hero">
+        <div class="dash-hero-copy">
+            <span class="dash-hero-badge"><i class="bi bi-stars" aria-hidden="true"></i> Ringkasan hari ini</span>
+            <h1>Halo, {{ session.get('nama_lengkap') }} <span aria-hidden="true">👋</span></h1>
+            <p>Semoga penjualan hari ini berjalan lancar. Berikut ringkasan singkat toko kamu dan akses cepat ke menu yang paling sering dipakai.</p>
+            <div class="dash-hero-actions">
+                <a href="{{ url_for('main.transaksi') }}" class="dash-btn dash-btn-light"><i class="bi bi-cart-plus-fill" aria-hidden="true"></i> Mulai Transaksi</a>
+                <a href="{{ url_for('main.scanner') }}" class="dash-btn dash-btn-ghost"><i class="bi bi-upc-scan" aria-hidden="true"></i> Scan Barcode</a>
+            </div>
+        </div>
+        <div class="dash-hero-visual" aria-hidden="true">
+            <span class="dash-orb dash-orb-1"></span>
+            <span class="dash-orb dash-orb-2"></span>
+            <div class="dash-receipt">
+                <div class="dash-receipt-top"><span class="dash-receipt-icon"><i class="bi bi-wallet2"></i></span> Pendapatan Hari Ini</div>
+                <strong>Rp {{ data.pendapatan_harian | id_number }}</strong>
+                <div class="dash-receipt-divider"></div>
+                <div class="dash-receipt-row"><span><i class="bi bi-receipt"></i> Transaksi</span><b>{{ data.transaksi_hari_ini or 0 }}</b></div>
+                <div class="dash-receipt-row"><span><i class="bi bi-box-seam"></i> Item terjual</span><b>{{ data.items_hari_ini or 0 }}</b></div>
+                <div class="dash-receipt-badge"><i class="bi bi-check-circle-fill"></i> Data tersinkron</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="dash-stats" aria-label="Statistik hari ini">
+        <article class="dash-stat" style="--tone:#6366f1; --tone-deep:#4338ca; --tone-soft:#eef2ff;">
+            <div class="dash-stat-top">
+                <span class="dash-stat-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span>
+                <span class="dash-stat-tag">Hari ini</span>
+            </div>
+            <div class="dash-stat-value">{{ data.transaksi_hari_ini or 0 }}</div>
+            <div class="dash-stat-label">Transaksi Hari Ini</div>
+        </article>
+        <article class="dash-stat" style="--tone:#10b981; --tone-deep:#047857; --tone-soft:#ecfdf5;">
+            <div class="dash-stat-top">
+                <span class="dash-stat-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+                <span class="dash-stat-tag">Pemasukan</span>
+            </div>
+            <div class="dash-stat-value is-currency">Rp {{ data.pendapatan_harian | id_number }}</div>
+            <div class="dash-stat-label">Pendapatan Hari Ini</div>
+        </article>
+        <article class="dash-stat" style="--tone:#f59e0b; --tone-deep:#b45309; --tone-soft:#fffbeb;">
+            <div class="dash-stat-top">
+                <span class="dash-stat-icon"><i class="bi bi-bag-check" aria-hidden="true"></i></span>
+                <span class="dash-stat-tag">Terjual</span>
+            </div>
+            <div class="dash-stat-value">{{ data.items_hari_ini or 0 }}</div>
+            <div class="dash-stat-label">Item Terjual Hari Ini</div>
+        </article>
+        <article class="dash-stat" style="--tone:#f43f5e; --tone-deep:#be123c; --tone-soft:#fff1f2;">
+            <div class="dash-stat-top">
+                <span class="dash-stat-icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+                <span class="dash-stat-tag">Restok</span>
+            </div>
+            <div class="dash-stat-value">{{ data.low_stock or 0 }}</div>
+            <div class="dash-stat-label">Stok Menipis</div>
+        </article>
+    </section>
+
+    <div class="dash-grid">
+        <section class="dash-panel">
+            <div class="dash-panel-head">
+                <div>
+                    <span class="dash-kicker">Pintasan</span>
+                    <h2>Aksi Cepat</h2>
+                </div>
+                <span class="chip"><i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> 1 klik</span>
+            </div>
+            <div class="dash-quick-grid">
+                <a class="dash-quick" href="{{ url_for('main.transaksi') }}" style="--tone:#6366f1; --tone-soft:#eef2ff;">
+                    <span class="dash-quick-icon"><i class="bi bi-cart-plus" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Transaksi Baru</strong><small>Buat penjualan baru</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dash-quick" href="{{ url_for('main.scanner') }}" style="--tone:#10b981; --tone-soft:#ecfdf5;">
+                    <span class="dash-quick-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Scan Barcode</strong><small>Input produk via kamera</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                {% if session.get('role') == 'admin' %}
+                <a class="dash-quick" href="{{ url_for('main.barang') }}" style="--tone:#f59e0b; --tone-soft:#fffbeb;">
+                    <span class="dash-quick-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Tambah Barang</strong><small>Perbarui katalog produk</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dash-quick" href="{{ url_for('main.laporan') }}" style="--tone:#0ea5e9; --tone-soft:#f0f9ff;">
+                    <span class="dash-quick-icon"><i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Lihat Laporan</strong><small>Analisis penjualan toko</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                {% elif session.get('role') == 'web_admin' %}
+                <a class="dash-quick" href="{{ url_for('main.riwayat_transaksi') }}" style="--tone:#f59e0b; --tone-soft:#fffbeb;">
+                    <span class="dash-quick-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Riwayat Transaksi</strong><small>Lihat transaksi terakhir</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dash-quick" href="{{ url_for('main.admin_web') }}" style="--tone:#0ea5e9; --tone-soft:#f0f9ff;">
+                    <span class="dash-quick-icon"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Admin Web</strong><small>Kelola akun & akses</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                {% else %}
+                <a class="dash-quick" href="{{ url_for('main.barang') }}" style="--tone:#f59e0b; --tone-soft:#fffbeb;">
+                    <span class="dash-quick-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Tambah Barang</strong><small>Tambahkan produk baru</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                <a class="dash-quick" href="{{ url_for('main.riwayat_transaksi') }}" style="--tone:#0ea5e9; --tone-soft:#f0f9ff;">
+                    <span class="dash-quick-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+                    <span class="dash-quick-text"><strong>Riwayat Transaksi</strong><small>Lihat transaksi terakhir</small></span>
+                    <i class="bi bi-arrow-up-right dash-quick-arrow" aria-hidden="true"></i>
+                </a>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="dash-panel">
+            <div class="dash-panel-head">
+                <div>
+                    <span class="dash-kicker">Perlu perhatian</span>
+                    <h2>Stok Menipis</h2>
+                </div>
+                <span class="dash-attention-pill {{ 'is-danger' if data.low_stock else 'is-safe' }}">
+                    <i class="bi {{ 'bi-exclamation-circle-fill' if data.low_stock else 'bi-check-circle-fill' }}" aria-hidden="true"></i>
+                    {{ 'Restok' if data.low_stock else 'Aman' }}
+                </span>
+            </div>
+            <div class="dash-attention-body">
+                <div class="dash-attention-number">{{ data.low_stock or 0 }}</div>
+                <p>produk memiliki stok di bawah batas aman dan perlu segera diisi ulang.</p>
+                {% if session.get('role') == 'admin' %}
+                <a class="dash-attention-link" href="{{ url_for('main.stok_barang') }}">Lihat stok barang <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                {% else %}
+                <a class="dash-attention-link" href="{{ url_for('main.barang') }}">Kelola barang <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                {% endif %}
+            </div>
+            <div class="dash-tip">
+                <i class="bi bi-lightbulb-fill" aria-hidden="true"></i>
+                <span>Tip: periksa stok setiap pagi agar produk favorit pelanggan tidak kehabisan.</span>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

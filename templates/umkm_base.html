@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pembukuan UMKM{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-modern.css') }}">
+    <style>
+        .umkm-heading { align-items:flex-start; display:flex; flex-wrap:wrap; gap:.8rem; justify-content:space-between; margin:0 auto 1.2rem; max-width:1200px; }
+        .umkm-heading h1 { color:var(--ink); font-size:1.35rem; font-weight:800; letter-spacing:-.03em; margin:0; }
+        .umkm-heading p { color:var(--gray); font-size:.78rem; margin:.35rem 0 0; }
+        .umkm-card { background:#fff; border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); }
+        .umkm-card-head { align-items:center; border-bottom:1px solid var(--border); display:flex; flex-wrap:wrap; gap:.6rem; justify-content:space-between; padding:1rem 1.1rem; }
+        .umkm-card-head h2 { color:var(--ink); font-size:.92rem; font-weight:800; margin:0; }
+        .umkm-card-body { padding:1.1rem; }
+        .umkm-stat { height:100%; padding:1rem; }
+        .umkm-stat-label { color:var(--gray); font-size:.7rem; font-weight:700; }
+        .umkm-stat-value { color:var(--ink); font-size:1.25rem; font-weight:800; margin-top:.45rem; overflow-wrap:anywhere; }
+        .umkm-stat-icon { align-items:center; background:var(--brand-soft); border-radius:11px; color:var(--brand-ink); display:inline-flex; height:38px; justify-content:center; width:38px; }
+        .umkm-table { --bs-table-bg:transparent; font-size:.78rem; margin:0; vertical-align:middle; }
+        .umkm-table thead th { background:#f8fafc; color:#64748b; font-size:.66rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+        .umkm-empty { color:var(--gray); padding:2rem 1rem; text-align:center; }
+        .umkm-profile-card { background:#fff; border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow); overflow:hidden; }
+        .umkm-profile-cover { background:var(--brand-gradient); height:116px; position:relative; }
+        .umkm-profile-cover::after { background-image:radial-gradient(rgba(255,255,255,.2) 1px,transparent 1px); background-size:18px 18px; content:''; inset:0; opacity:.5; position:absolute; }
+        .umkm-profile-avatar { align-items:center; background:var(--brand-gradient); border:4px solid white; border-radius:50%; box-shadow:var(--shadow); color:white; display:flex; font-size:2rem; font-weight:800; height:96px; justify-content:center; margin:-48px auto 0; position:relative; width:96px; z-index:1; }
+        .umkm-profile-body { padding:0 1.4rem 1.4rem; text-align:center; }
+        .umkm-profile-body h2 { font-size:1.1rem; font-weight:800; margin:.65rem 0 .1rem; }
+        .umkm-profile-meta { border-top:1px solid #f1f5f9; display:grid; gap:.65rem; margin-top:1rem; padding-top:1rem; text-align:left; }
+        .umkm-profile-item { align-items:center; background:#fbfcff; border:1px solid #eef2f9; border-radius:12px; display:flex; gap:.7rem; padding:.7rem .8rem; }
+        .umkm-profile-item i { align-items:center; background:var(--brand-soft); border-radius:9px; color:var(--brand-ink); display:inline-flex; height:34px; justify-content:center; width:34px; }
+        .umkm-profile-item span { display:flex; flex-direction:column; min-width:0; }
+        .umkm-profile-item small { color:var(--gray); font-size:.6rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .umkm-profile-item strong { color:#334155; font-size:.78rem; overflow-wrap:anywhere; }
+        @media print { .app-sidebar,.app-topbar,.app-footer,.umkm-heading button,.umkm-heading .btn { display:none!important; } .app-main { margin:0; } .app-content { padding:0; } .umkm-card { break-inside:avoid; box-shadow:none; } }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% set page_map = {
+        'main.umkm_dashboard': ('Ringkasan Pembukuan', 'PEMBUKUAN UMKM', 'bi-grid-1x2-fill'),
+        'main.umkm_accounts': ('Daftar Akun', 'SIKLUS AKUNTANSI', 'bi-list-columns'),
+        'main.umkm_journals': ('Jurnal Umum', 'SIKLUS AKUNTANSI', 'bi-journal-plus'),
+        'main.umkm_ledger': ('Buku Besar', 'SIKLUS AKUNTANSI', 'bi-journal-text'),
+        'main.umkm_reports': ('Laporan Keuangan', 'LAPORAN', 'bi-file-earmark-bar-graph'),
+        'main.umkm_profile': ('Akun Saya', 'AKUN', 'bi-person-circle')
+    } %}
+    {% set page_info = page_map.get(request.endpoint, ('Pembukuan UMKM', 'SIKLUS AKUNTANSI', 'bi-journal-check')) %}
+    <div class="app-shell">
+        <aside class="app-sidebar" id="appSidebar" aria-label="Navigasi pembukuan UMKM">
+            <div class="sidebar-brand">
+                <a class="sidebar-brand-link" href="{{ url_for('main.umkm_dashboard') }}">
+                    <span class="sidebar-logo"><i class="bi bi-journal-check" aria-hidden="true"></i></span>
+                    <span class="sidebar-brand-text"><strong>Pembukuan UMKM</strong><small>SIKLUS AKUNTANSI</small></span>
+                </a>
+                <button type="button" class="sidebar-close d-xl-none" id="sidebarClose" aria-label="Tutup menu"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </div>
+            <div class="sidebar-scroll">
+                <nav class="sidebar-nav">
+                    <p class="sidebar-label">Pembukuan</p>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_dashboard' %}active{% endif %}" href="{{ url_for('main.umkm_dashboard') }}"><span class="sidebar-icon"><i class="bi bi-grid-1x2-fill"></i></span><span>Ringkasan</span></a>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_accounts' %}active{% endif %}" href="{{ url_for('main.umkm_accounts') }}"><span class="sidebar-icon"><i class="bi bi-list-columns"></i></span><span>Daftar Akun</span></a>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_journals' %}active{% endif %}" href="{{ url_for('main.umkm_journals') }}"><span class="sidebar-icon"><i class="bi bi-journal-plus"></i></span><span>Jurnal</span></a>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_ledger' %}active{% endif %}" href="{{ url_for('main.umkm_ledger') }}"><span class="sidebar-icon"><i class="bi bi-journal-text"></i></span><span>Buku Besar</span></a>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_reports' %}active{% endif %}" href="{{ url_for('main.umkm_reports') }}"><span class="sidebar-icon"><i class="bi bi-file-earmark-bar-graph"></i></span><span>Laporan Keuangan</span></a>
+                    <p class="sidebar-label">Akun</p>
+                    <a class="sidebar-link {% if request.endpoint == 'main.umkm_profile' %}active{% endif %}" href="{{ url_for('main.umkm_profile') }}"><span class="sidebar-icon"><i class="bi bi-person-circle"></i></span><span>Akun Saya</span></a>
+                </nav>
+            </div>
+            <div class="sidebar-footer">
+                <a class="sidebar-user" href="{{ url_for('main.umkm_profile') }}">
+                    <span class="sidebar-avatar placeholder">{{ (session.get('nama_lengkap') or 'U')[:1]|upper }}</span>
+                    <span class="sidebar-user-meta"><strong>{{ session.get('nama_lengkap') }}</strong><small>UMKM</small></span>
+                </a>
+                <a class="sidebar-logout" href="{{ url_for('main.logout') }}" title="Logout" aria-label="Logout"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></a>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="app-main">
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <button type="button" class="topbar-menu-btn" id="sidebarToggle" aria-label="Buka menu" aria-controls="appSidebar" aria-expanded="false"><i class="bi bi-list" aria-hidden="true"></i></button>
+                    <div class="topbar-heading"><span class="topbar-eyebrow">{{ page_info[1] }}</span><h2>{{ page_info[0] }}</h2></div>
+                </div>
+                <div class="topbar-right">
+                    <span class="topbar-date d-none d-md-inline-flex"><i class="bi bi-calendar3"></i><span id="topbarDate"></span></span>
+                    <div class="dropdown">
+                        <button class="topbar-profile dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="topbar-profile-avatar placeholder">{{ (session.get('nama_lengkap') or 'U')[:1]|upper }}</span>
+                            <span class="topbar-profile-name"><strong>{{ session.get('nama_lengkap') }}</strong><small>UMKM</small></span><i class="bi bi-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end profile-dropdown-card">
+                            <li class="profile-dropdown-head"><span class="dropdown-avatar placeholder">{{ (session.get('nama_lengkap') or 'U')[:1]|upper }}</span><strong>{{ session.get('nama_lengkap') }}</strong><small>Akun Pembukuan UMKM</small></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.umkm_profile') }}"><i class="bi bi-person me-2"></i>Akun Saya</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+            <main class="app-content page-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'danger' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                    </div>
+                    {% endfor %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </main>
+            <footer class="app-footer"><span>Pembukuan UMKM &middot; Siklus Akuntansi</span></footer>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+    (() => {
+        const dateTarget = document.getElementById('topbarDate');
+        if (dateTarget) dateTarget.textContent = new Intl.DateTimeFormat('id-ID', {weekday:'long',day:'numeric',month:'short',year:'numeric'}).format(new Date());
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggle = document.getElementById('sidebarToggle');
+        const closeButton = document.getElementById('sidebarClose');
+        if (!sidebar || !toggle || !overlay) return;
+        const closeSidebar = () => {
+            sidebar.classList.remove('is-open');
+            overlay.classList.remove('is-visible');
+            document.body.classList.remove('sidebar-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        };
+        const openSidebar = () => {
+            sidebar.classList.add('is-open');
+            overlay.classList.add('is-visible');
+            document.body.classList.add('sidebar-open');
+            toggle.setAttribute('aria-expanded', 'true');
+        };
+        toggle.addEventListener('click', () => sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar());
+        closeButton?.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+        sidebar.querySelectorAll('.sidebar-link').forEach(link => link.addEventListener('click', closeSidebar));
+        document.addEventListener('keydown', event => { if (event.key === 'Escape') closeSidebar(); });
+    })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

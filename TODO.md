@@ -1,0 +1,6 @@
+- [ ] Add Admin menu item “Barcode Produk” to `templates/base.html`
+- [ ] Add DB tables + utility functions for barcode produk in `app/utils.py`
+- [ ] Add EAN-13 generation + CRUD + search + download/print routes in `app/routes.py`
+- [ ] Create template `templates/barcode_produk.html` with modern responsive UI, preview, label count, and actions
+- [ ] Update `requirements.txt` if new dependencies are needed
+- [ ] Manual testing: create records, ensure uniqueness, download PNG/PDF, print, and verify scan-ability

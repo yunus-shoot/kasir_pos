@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Member - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .member-page { --member-radius: 20px; }
+    .member-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--member-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .member-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .member-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .member-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .member-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .member-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .member-count { background: var(--brand-soft); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-ink); font-size: 0.65rem; font-weight: 800; padding: 0.3rem 0.65rem; white-space: nowrap; }
+    .member-search-wrap { position: relative; width: min(100%, 250px); }
+    .member-search-wrap > i { color: #94a3b8; font-size: 0.8rem; left: 0.85rem; position: absolute; top: 50%; transform: translateY(-50%); }
+    .member-search { background: #fbfcfe; border: 1px solid #dfe5ef; border-radius: 10px; color: var(--ink); font-size: 0.76rem; padding: 0.5rem 0.8rem 0.5rem 2.05rem; width: 100%; }
+    .member-search:focus { background: #fff; border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12); outline: 0; }
+    .member-form-body { padding: 1.3rem; }
+    .member-form-body .form-label { color: #475569; }
+    .member-table { font-size: 0.78rem; margin: 0; }
+    .member-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.75rem 1.15rem; text-transform: uppercase; white-space: nowrap; }
+    .member-table tbody td { border-color: #f1f5f9; padding: 0.85rem 1.15rem; vertical-align: middle; }
+    .member-table tbody tr:hover { background: #fafbff; }
+    .member-identity { align-items: center; display: flex; gap: 0.75rem; min-width: 200px; }
+    .member-avatar { align-items: center; background: #eef2ff; border-radius: 12px; color: #4338ca; display: inline-flex; flex: 0 0 38px; font-size: 0.78rem; font-weight: 800; height: 38px; justify-content: center; width: 38px; }
+    .member-avatar.tone-1 { background: #ecfdf5; color: #047857; }
+    .member-avatar.tone-2 { background: #fffbeb; color: #b45309; }
+    .member-avatar.tone-3 { background: #f0f9ff; color: #0369a1; }
+    .member-avatar.tone-4 { background: #fff1f2; color: #be123c; }
+    .member-name { color: var(--ink); display: block; font-weight: 800; }
+    .member-contact { color: var(--muted); display: block; font-size: 0.68rem; margin-top: 0.1rem; }
+    .member-discount { background: #eef2ff; border-radius: 999px; color: var(--brand-ink); display: inline-flex; font-size: 0.65rem; font-weight: 800; padding: 0.28rem 0.55rem; white-space: nowrap; }
+    .member-actions { align-items: center; display: flex; gap: 0.35rem; justify-content: flex-end; }
+    .member-action { align-items: center; aspect-ratio: 1; border: 1px solid transparent; border-radius: 9px; display: inline-flex; font-size: 0.8rem; height: 32px; justify-content: center; padding: 0; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease; width: 32px; }
+    .member-action:hover { transform: translateY(-1px); }
+    .member-action-edit { background: #eef2ff; border-color: #e0e7ff; color: #4338ca; }
+    .member-action-edit:hover { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+    .member-action-delete { background: #fff1f2; border-color: #ffe4e6; color: #be123c; }
+    .member-action-delete:hover { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
+    .member-empty { color: var(--muted); padding: 2.75rem 1rem !important; text-align: center; }
+    .member-empty i { color: #cbd5e1; display: block; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    @media (max-width: 767.98px) {
+        .member-panel-head { padding: 0.95rem 1rem; }
+        .member-search-wrap { width: 100%; }
+        .member-form-body { padding: 1.05rem; }
+    }
+</style>
+
+<main class="member-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-person-hearts" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Manajemen</span>
+                <h1>Member</h1>
+                <p>Kelola data pelanggan member dan batas diskon transaksi.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-people-fill" aria-hidden="true"></i>{{ member_list|length }} member terdaftar</span>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-4">
+            <section class="member-panel" aria-labelledby="memberAddTitle">
+                <div class="member-panel-head">
+                    <div class="member-panel-title">
+                        <span class="member-panel-icon"><i class="bi bi-person-plus" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="memberAddTitle">Tambah Member</h2>
+                            <p>Daftarkan pelanggan baru.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="member-form-body">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <label class="form-label" for="memberName">Nama</label>
+                            <input id="memberName" type="text" name="nama" class="form-control" maxlength="150" placeholder="Nama lengkap pelanggan" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="memberPhone">Nomor Telepon</label>
+                            <input id="memberPhone" type="tel" name="telepon" class="form-control" maxlength="30" autocomplete="tel" placeholder="08xxxxxxxxxx" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="memberEmail">Email <span class="text-muted fw-normal">(opsional)</span></label>
+                            <input id="memberEmail" type="email" name="email" class="form-control" maxlength="150" autocomplete="email" placeholder="nama@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="memberAddress">Alamat <span class="text-muted fw-normal">(opsional)</span></label>
+                            <textarea id="memberAddress" name="alamat" class="form-control" rows="2" maxlength="2000" autocomplete="street-address" placeholder="Alamat pelanggan"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="memberDiscount">Diskon Maksimal (%)</label>
+                            <input id="memberDiscount" type="number" name="diskon_persen" class="form-control" min="0" max="100" step="0.01" value="0" required>
+                            <div class="form-text">Batas diskon yang bisa diberikan saat transaksi.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Tambah Member</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <section class="member-panel" aria-labelledby="memberListTitle">
+                <div class="member-panel-head">
+                    <div class="member-panel-title">
+                        <span class="member-panel-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="memberListTitle">Daftar Member</h2>
+                            <p>Semua pelanggan member toko.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="member-count">{{ member_list|length }} member</span>
+                        <div class="member-search-wrap">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input type="search" id="memberSearch" class="member-search" placeholder="Cari member..." autocomplete="off" aria-label="Cari member">
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table member-table">
+                        <thead>
+                            <tr><th>Nama / Kontak</th><th>Diskon</th><th>Status</th><th class="text-end">Aksi</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in member_list %}
+                            <tr data-member-row data-search="{{ (item.nama ~ ' ' ~ (item.telepon or '') ~ ' ' ~ (item.email or ''))|lower }}">
+                                <td>
+                                    <div class="member-identity">
+                                        <span class="member-avatar tone-{{ loop.index0 % 5 }}">{{ (item.nama or 'M')[:1]|upper }}</span>
+                                        <div>
+                                            <span class="member-name">{{ item.nama }}</span>
+                                            <span class="member-contact"><i class="bi bi-telephone me-1" aria-hidden="true"></i>{{ item.telepon }}{% if item.email %} &middot; {{ item.email }}{% endif %}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="member-discount">{{ item.diskon_persen }}%</span></td>
+                                <td>{% if item.aktif %}<span class="badge text-bg-success">Aktif</span>{% else %}<span class="badge text-bg-secondary">Nonaktif</span>{% endif %}</td>
+                                <td>
+                                    <div class="member-actions">
+                                        <button type="button" class="member-action member-action-edit" data-bs-toggle="modal" data-bs-target="#editMember{{ item.id }}" aria-label="Edit {{ item.nama }}" title="Edit member"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
+                                        <form method="POST" class="d-inline" data-confirm-message="Data member {{ item.nama }} akan dihapus." data-confirm-title="Hapus Member" data-confirm-button="Ya, Hapus">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="member_id" value="{{ item.id }}">
+                                            <button type="submit" class="member-action member-action-delete" aria-label="Hapus {{ item.nama }}" title="Hapus member"><i class="bi bi-trash3" aria-hidden="true"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr id="memberNoResults" {% if member_list %}hidden{% endif %}>
+                                <td colspan="4" class="member-empty">
+                                    <i class="bi bi-person-x" aria-hidden="true"></i>
+                                    <span id="memberEmptyText">Belum ada member terdaftar.</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {% for item in member_list %}
+                <div class="modal fade" id="editMember{{ item.id }}" tabindex="-1" aria-labelledby="editMemberTitle{{ item.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editMemberTitle{{ item.id }}"><i class="bi bi-pencil-square me-2 text-primary" aria-hidden="true"></i>Edit Member</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit">
+                                    <input type="hidden" name="member_id" value="{{ item.id }}">
+                                    <div class="mb-3"><label class="form-label">Nama</label><input type="text" name="nama" class="form-control" maxlength="150" value="{{ item.nama }}" required></div>
+                                    <div class="mb-3"><label class="form-label">Nomor Telepon</label><input type="tel" name="telepon" class="form-control" maxlength="30" value="{{ item.telepon }}" required></div>
+                                    <div class="mb-3"><label class="form-label">Email</label><input type="email" name="email" class="form-control" maxlength="150" value="{{ item.email or '' }}"></div>
+                                    <div class="mb-3"><label class="form-label">Alamat</label><textarea name="alamat" class="form-control" rows="2" maxlength="2000">{{ item.alamat or '' }}</textarea></div>
+                                    <div class="mb-3"><label class="form-label">Diskon Maksimal (%)</label><input type="number" name="diskon_persen" class="form-control" min="0" max="100" step="0.01" value="{{ item.diskon_persen }}" required></div>
+                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="aktif" id="memberActive{{ item.id }}" {% if item.aktif %}checked{% endif %}><label class="form-check-label" for="memberActive{{ item.id }}">Member aktif</label></div>
+                                </div>
+                                <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-primary">Simpan Perubahan</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (() => {
+        const searchInput = document.getElementById('memberSearch');
+        const rows = Array.from(document.querySelectorAll('[data-member-row]'));
+        const noResults = document.getElementById('memberNoResults');
+        const emptyText = document.getElementById('memberEmptyText');
+        if (!searchInput || !noResults) return;
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            let visible = 0;
+
+            rows.forEach(row => {
+                const matches = !query || (row.dataset.search || '').includes(query);
+                row.hidden = !matches;
+                if (matches) visible += 1;
+            });
+
+            noResults.hidden = visible !== 0;
+            if (emptyText) {
+                emptyText.textContent = query
+                    ? 'Tidak ada member yang cocok dengan pencarian.'
+                    : 'Belum ada member terdaftar.';
+            }
+        });
+    })();
+</script>
+{% endblock %}

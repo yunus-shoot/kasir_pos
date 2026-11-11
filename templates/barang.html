@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}Barang - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .barang-page { --barang-radius: 20px; }
+    .barang-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--barang-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .barang-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .barang-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .barang-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .barang-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .barang-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .barang-count { background: var(--brand-soft); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-ink); font-size: 0.65rem; font-weight: 800; padding: 0.3rem 0.65rem; white-space: nowrap; }
+    .barang-search-wrap { position: relative; width: min(100%, 240px); }
+    .barang-search-wrap > i { color: #94a3b8; font-size: 0.8rem; left: 0.8rem; position: absolute; top: 50%; transform: translateY(-50%); }
+    .barang-search { background: #fbfcfe; border: 1px solid #dfe5ef; border-radius: 10px; color: var(--ink); font-size: 0.75rem; padding: 0.48rem 0.75rem 0.48rem 2rem; width: 100%; }
+    .barang-search:focus { background: #fff; border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12); outline: 0; }
+    .barang-table { font-size: 0.75rem; margin: 0; }
+    .barang-table thead th { background: #f8fafc; color: #64748b; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.72rem 0.9rem; text-transform: uppercase; white-space: nowrap; }
+    .barang-table tbody td { border-color: #f1f5f9; padding: 0.72rem 0.9rem; vertical-align: middle; }
+    .barang-table tbody tr:hover { background: #fafbff; }
+    .barang-product { align-items: center; display: flex; gap: 0.6rem; min-width: 160px; }
+    .barang-avatar { align-items: center; background: var(--brand-soft); border-radius: 10px; color: var(--brand-ink); display: inline-flex; flex: 0 0 34px; font-size: 0.7rem; font-weight: 800; height: 34px; justify-content: center; width: 34px; }
+    .barang-name { color: var(--ink); display: block; font-weight: 800; }
+    .barang-code { color: var(--brand-ink); display: block; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.6rem; margin-top: 0.08rem; }
+    .barang-barcode { color: #64748b; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.68rem; white-space: nowrap; }
+    .barang-category { background: #f1f5f9; border-radius: 999px; color: #475569; display: inline-flex; font-size: 0.62rem; font-weight: 700; padding: 0.25rem 0.5rem; white-space: nowrap; }
+    .barang-price { color: var(--ink); font-weight: 800; white-space: nowrap; }
+    .barang-stock { align-items: center; border-radius: 999px; display: inline-flex; font-size: 0.62rem; font-weight: 800; gap: 0.25rem; padding: 0.25rem 0.5rem; white-space: nowrap; }
+    .barang-stock.is-safe { background: #ecfdf5; color: #047857; }
+    .barang-stock.is-low { background: #fffbeb; color: #b45309; }
+    .barang-stock.is-empty { background: #fff1f2; color: #be123c; }
+    .barang-actions { align-items: center; display: flex; gap: 0.3rem; justify-content: flex-end; white-space: nowrap; }
+    .barang-action { align-items: center; aspect-ratio: 1; border: 1px solid transparent; border-radius: 8px; display: inline-flex; font-size: 0.78rem; height: 30px; justify-content: center; padding: 0; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease; width: 30px; }
+    .barang-action:hover { transform: translateY(-1px); }
+    .barang-action:focus-visible { outline: 3px solid rgba(99, 102, 241, 0.25); outline-offset: 2px; }
+    .barang-action-edit { background: #eef2ff; border-color: #e0e7ff; color: #4338ca; }
+    .barang-action-edit:hover { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+    .barang-action-delete { background: #fff1f2; border-color: #ffe4e6; color: #be123c; }
+    .barang-action-delete:hover { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
+    .barang-form-body { padding: 1.3rem; }
+    .barang-add-mobile { align-items: center; border-radius: 9px; display: inline-flex; font-size: 0.72rem; font-weight: 700; gap: 0.35rem; min-height: 32px; padding: 0.3rem 0.6rem; }
+    .barang-add-mobile-modal .modal-content { border: 0; border-radius: 18px; }
+    .barang-mobile-scanner { min-height: 190px; }
+    .barang-scanner { background: #0f172a; border: 2px solid var(--brand-mid); border-radius: 12px; min-height: 350px; overflow: hidden; position: relative; }
+    .barang-scanner .viewport { height: 100% !important; inset: 0; position: absolute !important; width: 100% !important; }
+    .barang-scanner video, .barang-scanner canvas { height: 100% !important; left: 0 !important; object-fit: cover; position: absolute !important; top: 0 !important; width: 100% !important; }
+    .barang-scanner video { z-index: 0; }
+    .barang-scanner canvas { pointer-events: none; z-index: 1; }
+    .barang-empty { color: var(--muted); padding: 2.75rem 1rem !important; text-align: center; }
+    .barang-empty i { color: #cbd5e1; display: block; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    @media (max-width: 991.98px) {
+        .barang-add-mobile-modal .modal-dialog { bottom: 0; height: auto; left: 0; margin: 0; max-width: none; position: absolute; right: 0; }
+        .barang-add-mobile-modal .modal-content { border-radius: 18px 18px 0 0; max-height: calc(100dvh - 1rem); }
+        .barang-add-mobile-modal .modal-body { overflow-y: auto; }
+        .barang-scanner { min-height: 260px; }
+    }
+    @media (max-width: 767.98px) {
+        .barang-panel-head { padding: 0.95rem 1rem; }
+        .barang-search-wrap { width: 100%; }
+        .barang-form-body { padding: 1.05rem; }
+    }
+</style>
+
+<main class="barang-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Manajemen</span>
+                <h1>{{ 'Manajemen Barang' if is_admin else 'Tambah Barang' }}</h1>
+                <p>{{ 'Tambah, kelola, dan pantau produk toko.' if is_admin else 'Tambahkan produk ke katalog toko.' }}</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-boxes" aria-hidden="true"></i>{{ barang_list|length }} produk</span>
+            <button type="button" class="btn btn-primary d-lg-none" data-bs-toggle="modal" data-bs-target="#mobileAddBarangModal"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Tambah</button>
+            <a href="#formTambahBarang" class="btn btn-primary d-none d-lg-inline-flex"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Tambah Barang</a>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-7">
+            <section class="barang-panel" aria-labelledby="barangListTitle">
+                <div class="barang-panel-head">
+                    <div class="barang-panel-title">
+                        <span class="barang-panel-icon"><i class="bi bi-boxes" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="barangListTitle">Daftar Barang</h2>
+                            <p>Seluruh produk di katalog toko.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="barang-count">{{ barang_list|length }} produk</span>
+                        <div class="barang-search-wrap">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                            <input type="search" id="barangSearch" class="barang-search" placeholder="Cari barang..." autocomplete="off" aria-label="Cari barang">
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table barang-table">
+                        <thead>
+                            <tr>
+                                <th>Kode / Nama</th>
+                                <th>Barcode</th>
+                                <th>Kategori</th>
+                                <th>Harga Jual</th>
+                                <th>Stok</th>
+                                {% if is_admin %}<th class="text-end">Aksi</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for barang in barang_list %}
+                            <tr data-barang-row data-search="{{ (barang.nama_barang ~ ' ' ~ (barang.kode_barang or '') ~ ' ' ~ (barang.barcode or '') ~ ' ' ~ (barang.nama_kategori or ''))|lower }}">
+                                <td>
+                                    <div class="barang-product">
+                                        <span class="barang-avatar">{{ (barang.nama_barang or 'P')[:1]|upper }}</span>
+                                        <div>
+                                            <span class="barang-name">{{ barang.nama_barang }}</span>
+                                            <span class="barang-code">{{ barang.kode_barang }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="barang-barcode">{{ barang.barcode or '-' }}</span></td>
+                                <td><span class="barang-category">{{ barang.nama_kategori }}</span></td>
+                                <td><span class="barang-price">Rp {{ barang.harga_jual | id_number }}</span></td>
+                                <td>
+                                    <span class="barang-stock {% if barang.stok <= 0 %}is-empty{% elif barang.stok <= 10 %}is-low{% else %}is-safe{% endif %}">
+                                        <i class="bi {% if barang.stok <= 0 %}bi-x-circle-fill{% elif barang.stok <= 10 %}bi-exclamation-circle-fill{% else %}bi-check-circle-fill{% endif %}" aria-hidden="true"></i>
+                                        {{ barang.stok }}
+                                    </span>
+                                </td>
+                                {% if is_admin %}<td>
+                                    <div class="barang-actions">
+                                        <button type="button" class="barang-action barang-action-edit" title="Edit barang" aria-label="Edit {{ barang.nama_barang }}" data-bs-toggle="modal" data-bs-target="#editModal{{ barang.id }}">
+                                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                        </button>
+                                        <form method="POST" action="{{ url_for('main.barang') }}" class="d-inline" data-confirm-message="Barang {{ barang.nama_barang }} akan dihapus." data-confirm-title="Hapus Barang" data-confirm-button="Ya, Hapus">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="barang_id" value="{{ barang.id }}">
+                                            <button type="submit" class="barang-action barang-action-delete" title="Hapus barang" aria-label="Hapus {{ barang.nama_barang }}">
+                                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>{% endif %}
+                            </tr>
+                            {% endfor %}
+                            <tr id="barangNoResults" {% if barang_list %}hidden{% endif %}>
+                                <td colspan="{{ 7 if is_admin else 6 }}" class="barang-empty">
+                                    <i class="bi bi-box" aria-hidden="true"></i>
+                                    <span id="barangEmptyText">Belum ada barang di katalog.</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {% for barang in barang_list %}
+                {% if is_admin %}
+                <div class="modal fade" id="editModal{{ barang.id }}" tabindex="-1" aria-labelledby="editBarangTitle{{ barang.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.barang') }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editBarangTitle{{ barang.id }}"><i class="bi bi-pencil-square me-2 text-primary" aria-hidden="true"></i>Edit Barang</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit">
+                                    <input type="hidden" name="barang_id" value="{{ barang.id }}">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Kode Barang</label>
+                                            <input type="text" name="kode_barang" class="form-control" value="{{ barang.kode_barang }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Nama Barang</label>
+                                            <input type="text" name="nama_barang" class="form-control" data-auto-uppercase value="{{ barang.nama_barang }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Harga Beli</label>
+                                            <input type="text" inputmode="decimal" name="harga_beli" class="form-control" data-indonesian-number value="{{ barang.harga_beli }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Harga Jual</label>
+                                            <input type="text" inputmode="decimal" name="harga_jual" class="form-control" data-indonesian-number value="{{ barang.harga_jual }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Stok</label>
+                                            <input type="number" name="stok" class="form-control" value="{{ barang.stok }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Kategori</label>
+                                            <select name="kategori_id" class="form-select" required>
+                                                {% for kategori in kategori_list %}
+                                                <option value="{{ kategori.id }}" {% if kategori.id == barang.kategori_id %}selected{% endif %}>{{ kategori.nama_kategori }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Barcode</label>
+                                            <input type="text" name="barcode" class="form-control" value="{{ barang.barcode }}">
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Deskripsi</label>
+                                            <textarea name="deskripsi" class="form-control" rows="3">{{ barang.deskripsi }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </section>
+        </div>
+
+        <div class="col-lg-5 d-none d-lg-block">
+            <section class="barang-panel" id="formTambahBarang" aria-labelledby="barangAddTitle">
+                <div class="barang-panel-head">
+                    <div class="barang-panel-title">
+                        <span class="barang-panel-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="barangAddTitle">Tambah Barang</h2>
+                            <p>Lengkapi data produk baru.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="barang-form-body">
+                    <div class="mb-3">
+                        <span class="form-label d-block">Scan Barcode</span>
+                        <div id="barangScanner" class="ratio ratio-16x9 barang-scanner d-none"></div>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="button" id="startBarangScanner" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-camera me-1" aria-hidden="true"></i>Scan dengan Kamera
+                            </button>
+                            <button type="button" id="stopBarangScanner" class="btn btn-outline-secondary btn-sm d-none">
+                                Berhenti
+                            </button>
+                        </div>
+                        <div id="barangScannerStatus" class="form-text">Hasil scan akan mengisi kode produk dan barcode.</div>
+                    </div>
+                    <form method="POST" action="{{ url_for('main.barang') }}">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <label class="form-label" for="barangKodeInput">Kode Barang</label>
+                            <input id="barangKodeInput" type="text" name="kode_barang" class="form-control" placeholder="Kode unik produk" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="barangNamaInput">Nama Barang</label>
+                            <input id="barangNamaInput" type="text" name="nama_barang" class="form-control" data-auto-uppercase placeholder="Nama produk" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="barangKategoriInput">Kategori</label>
+                            <select id="barangKategoriInput" name="kategori_id" class="form-select" required>
+                                {% for kategori in kategori_list %}
+                                <option value="{{ kategori.id }}">{{ kategori.nama_kategori }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="barangHargaBeliInput">Harga Beli</label>
+                                <input id="barangHargaBeliInput" type="text" inputmode="decimal" name="harga_beli" class="form-control" data-indonesian-number placeholder="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="barangHargaJualInput">Harga Jual</label>
+                                <input id="barangHargaJualInput" type="text" inputmode="decimal" name="harga_jual" class="form-control" data-indonesian-number placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="form-label" for="barangStokInput">Stok</label>
+                                <input id="barangStokInput" type="number" name="stok" class="form-control" value="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="barangBarcodeInput">Barcode</label>
+                                <input id="barangBarcodeInput" type="text" name="barcode" class="form-control" placeholder="Opsional">
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-3">
+                            <label class="form-label" for="barangDeskripsiInput">Deskripsi</label>
+                            <textarea id="barangDeskripsiInput" name="deskripsi" class="form-control" rows="3" placeholder="Deskripsi produk (opsional)"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Tambah Barang</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal fade barang-add-mobile-modal" id="mobileAddBarangModal" tabindex="-1" aria-labelledby="mobileAddBarangTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('main.barang') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="mobileAddBarangTitle"><i class="bi bi-plus-circle me-2 text-primary" aria-hidden="true"></i>Tambah Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                <label class="form-label mb-0" for="mobileBarangScanner">Scan Barcode Produk</label>
+                                <div class="d-flex gap-2">
+                                    <button type="button" id="startMobileBarangScanner" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-camera me-1" aria-hidden="true"></i>Scan
+                                    </button>
+                                    <button type="button" id="stopMobileBarangScanner" class="btn btn-outline-secondary btn-sm d-none">Berhenti</button>
+                                </div>
+                            </div>
+                            <div id="mobileBarangScanner" class="ratio ratio-16x9 barang-scanner barang-mobile-scanner d-none"></div>
+                            <div id="mobileBarangScannerStatus" class="form-text">Arahkan kamera ke barcode untuk mengisi kode dan barcode.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="mobileBarangKodeInput">Kode Barang</label>
+                            <input id="mobileBarangKodeInput" type="text" name="kode_barang" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="mobileBarangNamaInput">Nama Barang</label>
+                            <input id="mobileBarangNamaInput" type="text" name="nama_barang" class="form-control" data-auto-uppercase required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="mobileBarangKategoriInput">Kategori</label>
+                            <select id="mobileBarangKategoriInput" name="kategori_id" class="form-select" required>
+                                {% for kategori in kategori_list %}
+                                <option value="{{ kategori.id }}">{{ kategori.nama_kategori }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label" for="mobileBarangHargaBeliInput">Harga Beli</label>
+                                <input id="mobileBarangHargaBeliInput" type="text" inputmode="decimal" name="harga_beli" class="form-control" data-indonesian-number required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="mobileBarangHargaJualInput">Harga Jual</label>
+                                <input id="mobileBarangHargaJualInput" type="text" inputmode="decimal" name="harga_jual" class="form-control" data-indonesian-number required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-6">
+                                <label class="form-label" for="mobileBarangStokInput">Stok</label>
+                                <input id="mobileBarangStokInput" type="number" name="stok" class="form-control" value="0" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="mobileBarangBarcodeInput">Barcode</label>
+                                <input id="mobileBarangBarcodeInput" type="text" name="barcode" class="form-control">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label" for="mobileBarangDeskripsiInput">Deskripsi</label>
+                            <textarea id="mobileBarangDeskripsiInput" name="deskripsi" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Tambah Barang</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+    const searchInput = document.getElementById('barangSearch');
+    const rows = Array.from(document.querySelectorAll('[data-barang-row]'));
+    const noResults = document.getElementById('barangNoResults');
+    const emptyText = document.getElementById('barangEmptyText');
+    if (searchInput && noResults) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            let visible = 0;
+            rows.forEach(row => {
+                const matches = !query || (row.dataset.search || '').includes(query);
+                row.hidden = !matches;
+                if (matches) visible += 1;
+            });
+            noResults.hidden = visible !== 0;
+            if (emptyText) {
+                emptyText.textContent = query
+                    ? 'Tidak ada barang yang cocok dengan pencarian.'
+                    : 'Belum ada barang di katalog.';
+            }
+        });
+    }
+
+    const scanBeep = new Audio('{{ url_for('static', filename='sound/scanner.mp3') }}');
+    scanBeep.preload = 'auto';
+
+    function playScanBeep() {
+        scanBeep.currentTime = 0;
+        scanBeep.play().catch(() => {});
+    }
+
+    function setupBarangScanner(scannerId, startId, stopId, statusId, kodeId, barcodeId, modalId) {
+        const scanner = document.getElementById(scannerId);
+        const startButton = document.getElementById(startId);
+        const stopButton = document.getElementById(stopId);
+        const status = document.getElementById(statusId);
+        const kodeInput = document.getElementById(kodeId);
+        const barcodeInput = document.getElementById(barcodeId);
+        if (!scanner || !startButton || !stopButton || !status || !kodeInput || !barcodeInput) return;
+
+        let scannerRunning = false;
+        let scannerInitializing = false;
+        let stopRequested = false;
+        let lastDetected = '';
+        let detectionLocked = false;
+
+        function setStatus(message, type) {
+            status.textContent = message;
+            status.className = 'form-text' + (type ? ' text-' + type : '');
+        }
+
+        function stopScanner() {
+            if (window.Quagga && scannerRunning) {
+                Quagga.offDetected(handleBarcodeDetected);
+                Quagga.stop();
+            }
+            if (scannerInitializing) stopRequested = true;
+            scannerRunning = false;
+            scanner.classList.add('d-none');
+            stopButton.classList.add('d-none');
+            startButton.classList.remove('d-none');
+        }
+
+        function handleBarcodeDetected(result) {
+            const code = result && result.codeResult && result.codeResult.code;
+            if (!code || detectionLocked || code === lastDetected) return;
+
+            lastDetected = code;
+            detectionLocked = true;
+            playScanBeep();
+            kodeInput.value = code;
+            barcodeInput.value = code;
+            kodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            setStatus('Barcode ' + code + ' berhasil diisi ke kode produk dan barcode.', 'success');
+            stopScanner();
+            setTimeout(() => {
+                detectionLocked = false;
+                lastDetected = '';
+            }, 800);
+        }
+
+        startButton.addEventListener('click', () => {
+            if (scannerRunning || scannerInitializing) return;
+            if (!window.Quagga) {
+                setStatus('Scanner tidak tersedia. Periksa koneksi lalu muat ulang halaman.', 'danger');
+                return;
+            }
+
+            stopRequested = false;
+            scannerInitializing = true;
+            scanner.classList.remove('d-none');
+            startButton.classList.add('d-none');
+            stopButton.classList.remove('d-none');
+            setStatus('Mengaktifkan kamera...', 'info');
+
+            Quagga.init({
+                inputStream: {
+                    type: 'LiveStream',
+                    target: scanner,
+                    constraints: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                },
+                decoder: { readers: ['ean_reader', 'code_128_reader', 'code_39_reader', 'upc_reader', 'upc_e_reader'] },
+                locate: true,
+                locator: { patchSize: 'medium', halfSample: true }
+            }, (error) => {
+                scannerInitializing = false;
+                if (error) {
+                    console.error(error);
+                    stopScanner();
+                    setStatus('Kamera tidak dapat digunakan. Izinkan akses kamera di browser.', 'danger');
+                    return;
+                }
+                if (stopRequested) {
+                    Quagga.stop();
+                    stopRequested = false;
+                    return;
+                }
+
+                Quagga.start();
+                Quagga.onDetected(handleBarcodeDetected);
+                scannerRunning = true;
+                setStatus('Kamera aktif. Arahkan ke barcode produk.', 'primary');
+            });
+        });
+
+        stopButton.addEventListener('click', () => {
+            stopScanner();
+            setStatus('Scanner dihentikan.', 'muted');
+        });
+
+        if (modalId) {
+            document.getElementById(modalId).addEventListener('hidden.bs.modal', stopScanner);
+        }
+    }
+
+    setupBarangScanner('barangScanner', 'startBarangScanner', 'stopBarangScanner', 'barangScannerStatus', 'barangKodeInput', 'barangBarcodeInput');
+    setupBarangScanner('mobileBarangScanner', 'startMobileBarangScanner', 'stopMobileBarangScanner', 'mobileBarangScannerStatus', 'mobileBarangKodeInput', 'mobileBarangBarcodeInput', 'mobileAddBarangModal');
+})();
+</script>
+{% endblock %}

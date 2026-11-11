@@ -1,0 +1,38 @@
+{% extends "umkm_base.html" %}
+{% block title %}Daftar Akun UMKM{% endblock %}
+{% block content %}
+<header class="umkm-heading"><div><h1>Daftar Akun</h1><p>Bagan akun dasar berdasarkan workbook siklus akuntansi UMKM dagang.</p></div></header>
+<div class="row g-3">
+    <div class="col-lg-4">
+        <section class="umkm-card">
+            <div class="umkm-card-head"><h2>Tambah Akun</h2></div>
+            <div class="umkm-card-body">
+                <form method="post">
+                    <label class="form-label" for="account_code">Kode akun</label><input class="form-control mb-3" id="account_code" name="account_code" maxlength="20" required>
+                    <label class="form-label" for="account_name">Nama akun</label><input class="form-control mb-3" id="account_name" name="account_name" maxlength="150" required>
+                    <label class="form-label" for="account_type">Kelompok</label>
+                    <select class="form-select mb-3" id="account_type" name="account_type" required>
+                        <option value="aset">Aset</option><option value="kewajiban">Liabilitas / Kewajiban</option><option value="ekuitas">Ekuitas</option><option value="pendapatan">Pendapatan</option><option value="beban">Beban</option>
+                    </select>
+                    <label class="form-label" for="normal_balance">Saldo normal</label>
+                    <select class="form-select mb-3" id="normal_balance" name="normal_balance" required><option value="debit">Debit</option><option value="kredit">Kredit</option></select>
+                    <button class="btn btn-primary w-100" type="submit"><i class="bi bi-plus-lg me-1"></i>Simpan Akun</button>
+                </form>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-8">
+        <section class="umkm-card">
+            <div class="umkm-card-head"><h2>Bagan Akun ({{ accounts|length }})</h2></div>
+            <div class="table-responsive"><table class="table umkm-table">
+                <thead><tr><th>Kode</th><th>Nama Akun</th><th>Kelompok</th><th>Saldo Normal</th></tr></thead>
+                <tbody>{% for account in accounts %}<tr>
+                    <td class="fw-bold">{{ account.account_code }}</td><td>{{ account.account_name }}</td>
+                    <td>{{ {'aset':'Aset','kewajiban':'Kewajiban','ekuitas':'Ekuitas','pendapatan':'Pendapatan','beban':'Beban'}[account.account_type] }}</td>
+                    <td>{{ account.normal_balance|capitalize }}</td>
+                </tr>{% endfor %}</tbody>
+            </table></div>
+        </section>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Saya - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .profile-page { --profile-radius: 22px; }
+    .profile-card { background: #fff; border: 1px solid var(--border); border-radius: var(--profile-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .profile-cover { background: radial-gradient(120% 160% at 100% 0%, #a855f7 0%, #7c3aed 34%, #4f46e5 68%, #4338ca 100%); height: 130px; position: relative; }
+    .profile-cover::before { background-image: radial-gradient(rgba(255,255,255,.18) 1px, transparent 1px); background-size: 18px 18px; content: ''; inset: 0; opacity: 0.5; position: absolute; }
+    .profile-avatar-wrap { margin: -58px auto 0; position: relative; width: 120px; z-index: 1; }
+    .profile-avatar { align-items: center; background: var(--brand-gradient); border: 4px solid #fff; border-radius: 50%; box-shadow: 0 18px 34px -18px rgba(15, 23, 42, 0.55); color: #fff; display: flex; font-size: 2.3rem; font-weight: 800; height: 120px; justify-content: center; object-fit: cover; overflow: hidden; width: 120px; }
+    .profile-avatar img { height: 100%; object-fit: cover; width: 100%; }
+    .profile-body { padding: 0.8rem 1.5rem 1.5rem; text-align: center; }
+    .profile-body h2 { color: var(--ink); font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.65rem 0 0.15rem; }
+    .profile-username { color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+    .profile-role { align-items: center; background: var(--brand-soft); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-ink); display: inline-flex; font-size: 0.65rem; font-weight: 800; gap: 0.35rem; margin-top: 0.65rem; padding: 0.32rem 0.65rem; text-transform: uppercase; }
+    .profile-meta { border-top: 1px solid #f1f5f9; display: grid; gap: 0.75rem; margin-top: 1.2rem; padding-top: 1.2rem; text-align: left; }
+    .profile-meta-item { align-items: center; background: #fbfcff; border: 1px solid #eef2f9; border-radius: 12px; display: flex; gap: 0.7rem; padding: 0.7rem 0.8rem; }
+    .profile-meta-icon { align-items: center; background: var(--brand-soft); border-radius: 9px; color: var(--brand-ink); display: inline-flex; flex: 0 0 34px; font-size: 0.8rem; height: 34px; justify-content: center; width: 34px; }
+    .profile-meta-text { display: flex; flex-direction: column; min-width: 0; }
+    .profile-meta-text small { color: var(--muted); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .profile-meta-text strong { color: #334155; font-size: 0.78rem; font-weight: 700; overflow-wrap: anywhere; }
+    .profile-form-card { background: #fff; border: 1px solid var(--border); border-radius: var(--profile-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .profile-form-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; gap: 0.75rem; padding: 1.05rem 1.3rem; }
+    .profile-form-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .profile-form-head h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; margin: 0; }
+    .profile-form-head p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .profile-form-body { padding: 1.3rem; }
+    .profile-upload-zone { align-items: center; background: #fbfcff; border: 1px dashed #c7d2fe; border-radius: 14px; display: flex; flex-direction: column; gap: 0.5rem; padding: 1.4rem 1rem; text-align: center; }
+    .profile-upload-zone i { color: var(--brand-ink); font-size: 1.6rem; }
+    .profile-upload-zone strong { color: #334155; font-size: 0.8rem; font-weight: 800; }
+    .profile-upload-zone span { color: var(--muted); font-size: 0.68rem; }
+    .profile-note { align-items: flex-start; background: linear-gradient(135deg, #f8faff, #eef2ff); border: 1px solid var(--brand-border); border-radius: 13px; color: #475569; display: flex; font-size: 0.7rem; gap: 0.55rem; line-height: 1.55; margin-top: 1rem; padding: 0.75rem 0.85rem; }
+    .profile-note i { color: var(--brand-ink); flex: 0 0 auto; margin-top: 0.1rem; }
+    @media (max-width: 767.98px) {
+        .profile-cover { height: 105px; }
+        .profile-body, .profile-form-body { padding-left: 1.1rem; padding-right: 1.1rem; }
+    }
+</style>
+
+<main class="profile-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-person-circle" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Akun</span>
+                <h1>Profil Saya</h1>
+                <p>Kelola foto dan informasi akun Anda.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Dashboard</a>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center align-items-start">
+        <div class="col-12 col-md-7 col-lg-5">
+            <section class="profile-card" aria-labelledby="profileCardTitle">
+                <div class="profile-cover"></div>
+                <div class="profile-avatar-wrap">
+                    <div class="profile-avatar">
+                        {% if user.profile_photo %}
+                        <img src="{{ url_for('static', filename='uploads/' ~ user.profile_photo) }}" alt="Foto profil {{ user.nama_lengkap }}">
+                        {% else %}
+                        {{ (user.nama_lengkap or 'U')[:1]|upper }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="profile-body">
+                    <h2 id="profileCardTitle">{{ user.nama_lengkap }}</h2>
+                    <div class="profile-username">@{{ user.username }}</div>
+                    <span class="profile-role"><i class="bi bi-shield-check" aria-hidden="true"></i>{{ (user.role or session.get('role') or 'pengguna')|replace('_', ' ') }}</span>
+                    <div class="profile-meta">
+                        <div class="profile-meta-item">
+                            <span class="profile-meta-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+                            <span class="profile-meta-text"><small>Nama Lengkap</small><strong>{{ user.nama_lengkap }}</strong></span>
+                        </div>
+                        <div class="profile-meta-item">
+                            <span class="profile-meta-icon"><i class="bi bi-at" aria-hidden="true"></i></span>
+                            <span class="profile-meta-text"><small>Username</small><strong>{{ user.username }}</strong></span>
+                        </div>
+                        <div class="profile-meta-item">
+                            <span class="profile-meta-icon"><i class="bi bi-image" aria-hidden="true"></i></span>
+                            <span class="profile-meta-text"><small>Foto Profil</small><strong>{{ 'Sudah diatur' if user.profile_photo else 'Belum diatur' }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-12 col-md-7 col-lg-5">
+            <section class="profile-form-card" aria-labelledby="profileFormTitle">
+                <div class="profile-form-head">
+                    <span class="profile-form-icon"><i class="bi bi-camera" aria-hidden="true"></i></span>
+                    <div>
+                        <h2 id="profileFormTitle">Perbarui Foto Profil</h2>
+                        <p>Pilih foto terbaik Anda.</p>
+                    </div>
+                </div>
+                <div class="profile-form-body">
+                    {% if session.get('role') in ('admin', 'kasir') %}
+                    <form method="POST" action="{{ url_for('main.profile') }}" enctype="multipart/form-data">
+                        <div class="profile-upload-zone">
+                            <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                            <strong>Unggah foto baru</strong>
+                            <span>Format JPG atau PNG, gunakan foto persegi agar tampil optimal.</span>
+                            <input type="file" name="profile_photo" class="form-control mt-2" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3"><i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Simpan Foto</button>
+                    </form>
+                    {% else %}
+                    <div class="profile-note">
+                        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                        <span>Perubahan foto profil hanya tersedia untuk akun admin dan kasir.</span>
+                    </div>
+                    {% endif %}
+                    <div class="profile-note">
+                        <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                        <span>Foto profil digunakan pada sidebar dan menu akun di bagian atas halaman.</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}

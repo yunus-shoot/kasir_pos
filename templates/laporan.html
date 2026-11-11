@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Laporan - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .report-page { --report-radius: 20px; }
+    .report-card { background: #fff; border: 1px solid var(--border); border-radius: var(--report-radius); box-shadow: var(--shadow); }
+    .report-filter { overflow: hidden; padding: 1.15rem 1.3rem; }
+    .report-filter .form-label { color: #475569; font-size: 0.7rem; font-weight: 800; }
+    .report-filter .form-control,
+    .report-filter .form-select { font-weight: 600; }
+    .report-stats { display: grid; gap: 0.9rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 1.35rem; }
+    .report-stat { background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; padding: 1.1rem 1.2rem; position: relative; }
+    .report-stat::after { background: var(--tone-soft); border-radius: 50%; content: ''; height: 86px; opacity: 0.85; position: absolute; right: -36px; top: -36px; width: 86px; }
+    .report-stat-top { align-items: center; display: flex; justify-content: space-between; position: relative; z-index: 1; }
+    .report-stat-icon { align-items: center; background: var(--tone-soft); border-radius: 12px; color: var(--tone); display: inline-flex; font-size: 1rem; height: 40px; justify-content: center; width: 40px; }
+    .report-stat-value { color: var(--ink); font-size: 1.45rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; margin-top: 0.8rem; overflow-wrap: anywhere; position: relative; z-index: 1; }
+    .report-stat-value.is-currency { font-size: 1.16rem; }
+    .report-stat-label { color: var(--gray); font-size: 0.7rem; font-weight: 700; margin-top: 0.22rem; position: relative; z-index: 1; }
+    .report-panel { overflow: hidden; }
+    .report-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.9rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .report-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .report-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .report-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .report-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .report-period { background: var(--brand-soft); border: 1px solid var(--brand-border); border-radius: 999px; color: var(--brand-ink); font-size: 0.65rem; font-weight: 800; padding: 0.32rem 0.65rem; white-space: nowrap; }
+    .report-detail-summary { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 1rem 1.3rem 0; }
+    .report-detail-summary-item { background: #f8fafc; border: 1px solid #e8edf4; border-radius: 12px; min-width: 0; padding: 0.8rem 0.95rem; }
+    .report-detail-summary-item.is-profit { background: #ecfdf5; border-color: #d1fae5; }
+    .report-detail-summary-item.is-capital { background: #eff6ff; border-color: #dbeafe; }
+    .report-detail-summary-label { color: #72808d; display: block; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 0.25rem; text-transform: uppercase; }
+    .report-detail-summary-value { color: #263b4d; display: block; font-size: 1rem; font-weight: 800; overflow-wrap: anywhere; }
+    .report-detail-summary-item.is-profit .report-detail-summary-value { color: #047857; }
+    .report-detail-summary-item.is-capital .report-detail-summary-value { color: #1d4ed8; }
+    .report-table { font-size: 0.76rem; margin: 0; }
+    .report-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.75rem 1.15rem; text-transform: uppercase; white-space: nowrap; }
+    .report-table tbody td { border-color: #f1f5f9; padding: 0.8rem 1.15rem; vertical-align: middle; }
+    .report-table tbody tr:hover { background: #fafbff; }
+    .report-code { color: var(--brand-ink); font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.7rem; font-weight: 800; }
+    .report-status { background: #ecfdf5; border-radius: 999px; color: #047857; display: inline-flex; font-size: 0.62rem; font-weight: 800; padding: 0.28rem 0.55rem; text-transform: capitalize; }
+    .report-detail { align-items: center; background: #eef2ff; border: 1px solid #e0e7ff; border-radius: 9px; color: var(--brand-ink); display: inline-flex; font-size: 0.68rem; font-weight: 800; gap: 0.35rem; justify-content: center; min-height: 32px; min-width: 84px; padding: 0.32rem 0.6rem; text-decoration: none; transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.18s ease; }
+    .report-detail i { font-size: 0.78rem; transition: transform 0.18s ease; }
+    .report-detail:hover { background: var(--brand-gradient); border-color: transparent; box-shadow: 0 8px 16px -8px rgba(99, 102, 241, 0.65); color: #fff; transform: translateY(-1px); }
+    .report-detail:hover i { transform: scale(1.12); }
+    .report-detail:active { box-shadow: none; transform: translateY(1px) scale(0.98); }
+    .report-detail:focus-visible { outline: 3px solid rgba(99, 102, 241, 0.28); outline-offset: 2px; }
+    .report-detail.is-opening { background: var(--brand-gradient); border-color: transparent; color: #fff; pointer-events: none; }
+    .report-detail.is-opening .report-detail-spinner { animation: reportDetailSpin 0.7s linear infinite; }
+    @keyframes reportDetailSpin { to { transform: rotate(360deg); } }
+    .report-empty { color: var(--muted); padding: 3rem 1rem !important; text-align: center; }
+    .report-empty i { color: #cbd5e1; display: block; font-size: 2rem; margin-bottom: 0.55rem; }
+    @media (max-width: 767.98px) {
+        .report-stats { grid-template-columns: 1fr; gap: 0.65rem; }
+        .report-stat { padding: 0.95rem 1rem; }
+        .report-filter { padding: 1rem; }
+        .report-detail-summary { gap: 0.5rem; grid-template-columns: 1fr; padding: 0.8rem 1rem 0; }
+        .report-panel-head { padding: 0.95rem 1rem; }
+    }
+    @media print {
+        @page { margin: 10mm; size: A4; }
+        .report-filter, .report-export, .page-heading, .report-period, .report-detail, .report-actions, .alert { display: none !important; }
+        .app-content, .page-content { padding: 0 !important; }
+        .report-card { border: 0; box-shadow: none; }
+        .report-stats { display: none !important; }
+        .report-detail-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+</style>
+
+<main class="report-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Analitik</span>
+                <h1>Laporan</h1>
+                <p>Pantau penjualan dan statistik toko pada periode terpilih.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-calendar3" aria-hidden="true"></i>{{ tanggal }}</span>
+            <span class="chip"><i class="bi bi-funnel" aria-hidden="true"></i>{{ jenis|capitalize }}</span>
+        </div>
+    </div>
+
+    <div class="report-card report-filter mb-4">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="jenis">Jenis Laporan</label>
+                <select id="jenis" name="jenis" class="form-select">
+                    <option value="harian" {% if jenis == 'harian' %}selected{% endif %}>Harian</option>
+                    <option value="mingguan" {% if jenis == 'mingguan' %}selected{% endif %}>Mingguan</option>
+                    <option value="bulanan" {% if jenis == 'bulanan' %}selected{% endif %}>Bulanan</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="tanggal">Tanggal</label>
+                <input id="tanggal" type="date" name="tanggal" class="form-control" value="{{ tanggal }}">
+            </div>
+            <div class="col-12 col-md-auto">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-2" aria-hidden="true"></i>Tampilkan</button>
+            </div>
+            <div class="col-12 col-md-auto ms-md-auto report-export">
+                <div class="d-flex gap-2">
+                    <button type="submit" name="export_pdf" value="1" formmethod="POST" class="btn btn-outline-danger"><i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>PDF</button>
+                    <button type="submit" name="export_excel" value="1" formmethod="POST" class="btn btn-outline-success"><i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i>Excel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <section class="report-stats" aria-label="Ringkasan laporan">
+        <article class="report-stat" style="--tone:#6366f1; --tone-soft:#eef2ff;">
+            <div class="report-stat-top"><span class="report-stat-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span></div>
+            <div class="report-stat-value">{{ data.total_transaksi or 0 }}</div>
+            <div class="report-stat-label">Total Transaksi</div>
+        </article>
+        <article class="report-stat" style="--tone:#10b981; --tone-soft:#ecfdf5;">
+            <div class="report-stat-top"><span class="report-stat-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span></div>
+            <div class="report-stat-value is-currency">Rp {{ data.total_pendapatan | id_number }}</div>
+            <div class="report-stat-label">Total Pendapatan</div>
+        </article>
+        <article class="report-stat" style="--tone:#f59e0b; --tone-soft:#fffbeb;">
+            <div class="report-stat-top"><span class="report-stat-icon"><i class="bi bi-bag-check" aria-hidden="true"></i></span></div>
+            <div class="report-stat-value">{{ data.total_items or 0 }}</div>
+            <div class="report-stat-label">Items Terjual</div>
+        </article>
+    </section>
+
+    <section class="report-card report-panel" aria-labelledby="reportDetailTitle">
+        <div class="report-panel-head">
+            <div class="report-panel-title">
+                <span class="report-panel-icon"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
+                <div>
+                    <h2 id="reportDetailTitle">Detail Transaksi</h2>
+                    <p>Transaksi yang tercatat pada periode ini.</p>
+                </div>
+            </div>
+            <span class="report-period">{{ jenis|capitalize }} &middot; {{ tanggal }}</span>
+        </div>
+        <div class="report-detail-summary" aria-label="Ringkasan laporan periode terpilih">
+            <div class="report-detail-summary-item is-profit">
+                <span class="report-detail-summary-label">Total Keuntungan</span>
+                <strong class="report-detail-summary-value">Rp {{ data.total_keuntungan | id_number }}</strong>
+            </div>
+            <div class="report-detail-summary-item is-capital">
+                <span class="report-detail-summary-label">Total Modal</span>
+                <strong class="report-detail-summary-value">Rp {{ data.total_modal | id_number }}</strong>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table report-table">
+                <thead><tr><th>Kode</th><th>Tanggal</th><th>Pelanggan</th><th>Kasir</th><th>Total</th><th>Metode</th><th>Status</th><th class="text-center">Aksi</th></tr></thead>
+                <tbody>
+                    {% for trx in data.transaksi %}
+                    <tr>
+                        <td class="report-code">{{ trx.kode_transaksi }}</td>
+                        <td>{{ trx.created_at }}</td>
+                        <td>{{ trx.nama_pelanggan or 'Umum' }}</td>
+                        <td>{{ trx.nama_kasir }}</td>
+                        <td class="fw-bold">Rp {{ trx.total | id_number }}</td>
+                        <td class="text-uppercase">{{ trx.metode_pembayaran }}</td>
+                        <td><span class="report-status">{{ trx.status }}</span></td>
+                        <td class="text-center"><a class="report-detail" href="{{ url_for('main.cetak_struk', kode=trx.kode_transaksi) }}" aria-label="Lihat struk transaksi {{ trx.kode_transaksi }}"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i><span>Detail</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="report-empty"><i class="bi bi-folder-open" aria-hidden="true"></i>Tidak ada data transaksi pada periode ini.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.report-detail').forEach(link => {
+        link.addEventListener('click', event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            link.classList.add('is-opening');
+            link.setAttribute('aria-busy', 'true');
+            link.querySelector('i').className = 'bi bi-arrow-repeat report-detail-spinner';
+            link.querySelector('span').textContent = 'Membuka struk';
+            link.querySelectorAll('i').item(1).remove();
+            window.setTimeout(() => window.location.assign(link.href), 220);
+        });
+    });
+</script>
+{% endblock %}

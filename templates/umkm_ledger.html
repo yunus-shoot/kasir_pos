@@ -1,0 +1,33 @@
+{% extends "umkm_base.html" %}
+{% block title %}Buku Besar UMKM{% endblock %}
+{% block content %}
+<header class="umkm-heading"><div><h1>Buku Besar</h1><p>Telusuri mutasi dan saldo setiap akun dari jurnal pembukuan.</p></div></header>
+<section class="umkm-card mb-3">
+    <div class="umkm-card-body">
+        <form class="row g-2 align-items-end" method="get">
+            <div class="col-md-4"><label class="form-label" for="account_id">Akun</label><select class="form-select" id="account_id" name="account_id"><option value="">Semua akun</option>{% for account in accounts %}<option value="{{ account.id }}" {% if account.id == account_id %}selected{% endif %}>{{ account.account_code }} - {{ account.account_name }}</option>{% endfor %}</select></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="start_date">Dari tanggal</label><input class="form-control" type="date" id="start_date" name="start_date" value="{{ start_date }}" required></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="end_date">Sampai tanggal</label><input class="form-control" type="date" id="end_date" name="end_date" value="{{ end_date }}" required></div>
+            <div class="col-md-2"><button class="btn btn-primary w-100" type="submit"><i class="bi bi-funnel me-1"></i>Tampilkan</button></div>
+        </form>
+    </div>
+</section>
+<section class="umkm-card">
+    <div class="umkm-card-head"><h2>{% if selected_account %}{{ selected_account.account_code }} - {{ selected_account.account_name }}{% else %}Mutasi Semua Akun{% endif %}</h2><span class="text-muted small">{{ start_date }} — {{ end_date }}</span></div>
+    <div class="table-responsive"><table class="table umkm-table">
+        <thead><tr><th>Tanggal</th><th>No. Bukti</th><th>Keterangan</th><th>Akun</th><th class="text-end">Debit</th><th class="text-end">Kredit</th>{% if selected_account %}<th class="text-end">Saldo</th>{% endif %}</tr></thead>
+        <tbody>
+        {% if selected_account %}<tr class="table-light"><td colspan="4"><strong>Saldo sebelum periode</strong></td><td colspan="2"></td><td class="text-end fw-bold">Rp {{ opening_balance|id_number }}</td></tr>{% endif %}
+        {% for line in lines %}<tr>
+            <td>{{ line.journal_date }}</td><td>{{ line.reference or '-' }}</td>
+            <td>{{ line.description }}<div class="small text-muted">{{ {'saldo_awal':'Saldo Awal','umum':'Umum','penyesuaian':'Penyesuaian'}[line.journal_type] }}</div></td>
+            <td>{{ line.account_code }} - {{ line.account_name }}</td>
+            <td class="text-end">{% if line.debit %}Rp {{ line.debit|id_number }}{% else %}-{% endif %}</td>
+            <td class="text-end">{% if line.credit %}Rp {{ line.credit|id_number }}{% else %}-{% endif %}</td>
+            {% if selected_account %}<td class="text-end fw-bold">Rp {{ line.running_balance|id_number }}</td>{% endif %}
+        </tr>{% endfor %}
+        {% if not lines %}<tr><td class="umkm-empty" colspan="{{ 7 if selected_account else 6 }}">Tidak ada mutasi pada periode ini.</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

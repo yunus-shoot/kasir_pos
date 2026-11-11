@@ -1,0 +1,664 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .scanner-panel {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        height: 100%;
+        overflow: hidden;
+    }
+    .scanner-panel-header {
+        align-items: center;
+        background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        justify-content: space-between;
+        padding: 1.05rem 1.3rem;
+    }
+    .scanner-panel-title { align-items: center; display: flex; gap: 0.75rem; min-width: 0; }
+    .scanner-panel-icon {
+        align-items: center;
+        background: var(--brand-soft);
+        border-radius: 12px;
+        color: var(--brand-ink);
+        display: inline-flex;
+        flex: 0 0 42px;
+        font-size: 1rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+    .scanner-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; margin: 0; }
+    .scanner-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .scanner-clear-button {
+        align-items: center;
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        border-radius: 9px;
+        color: #be123c;
+        display: inline-flex;
+        font-size: 0.66rem;
+        font-weight: 800;
+        gap: 0.35rem;
+        padding: 0.36rem 0.6rem;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+    .scanner-clear-button:hover { background: #ffe4e6; border-color: #fda4af; color: #9f1239; transform: translateY(-1px); }
+    .scanner-clear-button:active { transform: scale(0.96); }
+    .scanner-camera {
+        background: #0b1120;
+        border: 1px solid #1e293b;
+        border-radius: 16px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+        min-height: 350px;
+        overflow: hidden;
+        position: relative;
+    }
+    .scanner-camera .viewport { height: 100% !important; inset: 0; position: absolute !important; width: 100% !important; }
+    .scanner-camera video,
+    .scanner-camera canvas { height: 100% !important; left: 0 !important; object-fit: cover; position: absolute !important; top: 0 !important; width: 100% !important; }
+    .scanner-camera video { z-index: 0; }
+    .scanner-camera canvas { pointer-events: none; z-index: 1; }
+    .scanner-camera::after {
+        border: 2px solid rgba(165, 180, 252, 0.85);
+        border-radius: 12px;
+        box-shadow: 0 0 0 999px rgba(2, 6, 23, 0.28), 0 0 24px rgba(99, 102, 241, 0.35);
+        content: '';
+        height: 46%;
+        left: 20%;
+        pointer-events: none;
+        position: absolute;
+        top: 27%;
+        width: 60%;
+        z-index: 2;
+    }
+    .scanner-result { min-height: 74px; }
+    .scanner-result .alert { font-size: 0.74rem; margin: 0; }
+    .scanner-cart-content { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 1rem 1.25rem 1.25rem; }
+    .scanner-cart-list { flex: 1; max-height: 320px; min-height: 100px; overflow-y: auto; }
+    .scanner-cart-item { align-items: center; border-bottom: 1px solid #f1f5f9; display: flex; gap: 0.6rem; padding: 0.72rem 0; }
+    .scanner-cart-item.is-entering { animation: scannerCartEnter 0.3s ease both; }
+    .scanner-cart-item.is-removing { animation: scannerCartRemove 0.2s ease forwards; pointer-events: none; }
+    .scanner-cart-item-name { color: var(--ink); font-size: 0.73rem; font-weight: 800; }
+    .scanner-cart-item-price { color: var(--gray); font-size: 0.67rem; }
+    .scanner-qty-control { align-items: center; background: #f8fafc; border: 1px solid #e8ecf4; border-radius: 9px; display: flex; overflow: hidden; }
+    .scanner-qty-control button { align-items: center; background: transparent; border: 0; color: #64748b; display: inline-flex; height: 28px; justify-content: center; width: 26px; }
+    .scanner-qty-control button:hover { background: #eef2f7; color: var(--brand-ink); }
+    .scanner-qty-control span { color: #334155; font-size: 0.69rem; font-weight: 800; min-width: 26px; text-align: center; }
+    .scanner-empty-cart { align-items: center; color: var(--muted); display: flex; flex: 1; flex-direction: column; justify-content: center; min-height: 180px; text-align: center; }
+    .scanner-empty-cart-icon {
+        align-items: center;
+        background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+        border: 1px dashed #c7d2fe;
+        border-radius: 18px;
+        color: var(--brand-mid);
+        display: inline-flex;
+        font-size: 1.45rem;
+        height: 60px;
+        justify-content: center;
+        margin-bottom: 0.65rem;
+        width: 60px;
+    }
+    .scanner-empty-cart strong { color: #475569; font-size: 0.8rem; }
+    .scanner-empty-cart span { font-size: 0.7rem; margin-top: 0.15rem; }
+    .scanner-cart-summary { border-top: 1px solid #f1f5f9; margin-top: auto; padding-top: 0.9rem; }
+    .scanner-cart-total { color: var(--brand-ink); font-size: 1.05rem; font-weight: 800; }
+    .scanner-checkout-button {
+        align-items: center;
+        background: var(--brand-gradient);
+        border: 0;
+        border-radius: 13px;
+        box-shadow: 0 14px 26px -12px rgba(99, 102, 241, 0.75);
+        color: #ffffff;
+        display: flex;
+        font-size: 0.82rem;
+        font-weight: 800;
+        gap: 0.45rem;
+        justify-content: center;
+        min-height: 46px;
+        transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        width: 100%;
+    }
+    .scanner-checkout-button:hover { background: var(--brand-gradient-hover); box-shadow: 0 18px 32px -12px rgba(99, 102, 241, 0.8); color: #ffffff; transform: translateY(-1px); }
+    .scanner-status { font-size: 0.72rem; font-weight: 700; }
+    .scanner-checkout-dialog .modal-dialog { max-width: 560px; }
+    .scanner-checkout-dialog .modal-content { border: 0; border-radius: 20px; box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24); overflow: hidden; }
+    .scanner-checkout-dialog .modal-header { align-items: flex-start; border: 0; padding: 1.25rem 1.35rem 0.75rem; }
+    .scanner-checkout-title { align-items: center; display: flex; gap: 0.8rem; }
+    .scanner-checkout-title-icon {
+        align-items: center;
+        background: var(--brand-soft);
+        border: 1px solid #e0e7ff;
+        border-radius: 12px;
+        color: var(--brand-ink);
+        display: inline-flex;
+        flex: 0 0 42px;
+        font-size: 1.1rem;
+        height: 42px;
+        justify-content: center;
+        width: 42px;
+    }
+    .scanner-checkout-kicker { color: var(--brand-ink); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.15rem; }
+    .scanner-checkout-dialog .modal-title { color: var(--ink); font-size: 1rem; font-weight: 800; }
+    .scanner-checkout-dialog .modal-body { padding: 0.6rem 1.35rem 1rem; }
+    .scanner-checkout-customer { background: #f8faff; border: 1px solid #eef2f9; border-radius: 11px; color: #526477; font-size: 0.76rem; margin-bottom: 0.85rem; padding: 0.65rem 0.75rem; }
+    .scanner-checkout-review { border-bottom: 1px solid #e8edf2; border-top: 1px solid #e8edf2; max-height: 230px; overflow-y: auto; }
+    .scanner-checkout-review-row { border-bottom: 1px solid #f1f5f9; color: #405168; display: flex; font-size: 0.78rem; gap: 0.75rem; justify-content: space-between; padding: 0.7rem 0.15rem; }
+    .scanner-checkout-review-row:last-child { border-bottom: 0; }
+    .scanner-checkout-total { align-items: center; background: linear-gradient(135deg, #f8faff, #eef2ff); border: 1px solid #e4e9f7; border-radius: 12px; display: flex; justify-content: space-between; margin-top: 0.85rem; padding: 0.8rem 0.9rem; }
+    .scanner-checkout-total strong { color: var(--brand-ink); font-size: 1.1rem; }
+    .scanner-checkout-details { display: grid; gap: 0.6rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0.7rem; }
+    .scanner-checkout-detail { background: #f7f8fa; border: 1px solid #ebeff3; border-radius: 10px; min-width: 0; padding: 0.65rem 0.75rem; }
+    .scanner-checkout-detail small { color: #7a8797; display: block; font-size: 0.63rem; margin-bottom: 0.2rem; }
+    .scanner-checkout-detail strong { color: #35465c; font-size: 0.76rem; overflow-wrap: anywhere; }
+    .scanner-checkout-dialog .modal-footer { border: 0; gap: 0.5rem; justify-content: space-between; padding: 0.15rem 1.35rem 1.25rem; }
+    .scanner-checkout-confirm { background: var(--brand-gradient); border: 0; box-shadow: 0 12px 24px -10px rgba(99, 102, 241, 0.75); color: #ffffff; }
+    .scanner-checkout-confirm:hover { background: var(--brand-gradient-hover); color: #ffffff; transform: translateY(-1px); }
+    @keyframes scannerCartEnter { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes scannerCartRemove { to { opacity: 0; transform: translateX(22px); max-height: 0; padding-bottom: 0; padding-top: 0; } }
+    @media (max-width: 991.98px) { .scanner-camera { min-height: 300px; } }
+    @media (max-width: 767.98px) { .scanner-camera { min-height: 260px; } }
+    @media (max-width: 575.98px) {
+        .scanner-checkout-dialog .modal-dialog { margin: 0.75rem; }
+        .scanner-checkout-dialog .modal-footer { align-items: stretch; flex-direction: column-reverse; padding: 0 1rem 1rem; }
+        .scanner-checkout-dialog .modal-footer .btn { width: 100%; }
+        .scanner-checkout-details { grid-template-columns: 1fr; }
+    }
+</style>
+
+<main class="scanner-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Point of Sale</span>
+                <h1>Scanner Barcode</h1>
+                <p>Scan barcode untuk menemukan dan menambahkan barang dengan cepat.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-camera-video" aria-hidden="true"></i> Kamera aktif otomatis</span>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <section class="col-12 col-lg-7">
+            <div class="scanner-panel">
+                <div class="scanner-panel-header">
+                    <div class="scanner-panel-title">
+                        <span class="scanner-panel-icon"><i class="bi bi-camera-video-fill" aria-hidden="true"></i></span>
+                        <div><h2>Video Scanner</h2><p>Arahkan kamera ke barcode produk</p></div>
+                    </div>
+                </div>
+                <div class="p-3 p-md-4">
+                    <div id="scannerContainer" class="scanner-camera ratio ratio-16x9"></div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                        <button id="startScanner" class="btn btn-primary"><i class="bi bi-camera-video me-2" aria-hidden="true"></i>Mulai Scanner</button>
+                        <button id="stopScanner" class="btn btn-outline-secondary"><i class="bi bi-stop-circle me-2" aria-hidden="true"></i>Berhenti</button>
+                        <span class="scanner-status text-muted ms-md-2" id="scannerStatus">Status: scanner offline</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="col-12 col-lg-5">
+            <div class="scanner-panel d-flex flex-column">
+                <div class="scanner-panel-header">
+                    <div class="scanner-panel-title">
+                        <span class="scanner-panel-icon"><i class="bi bi-bag-check-fill" aria-hidden="true"></i></span>
+                        <div><h2>Keranjang</h2><p>Produk hasil scan</p></div>
+                    </div>
+                    <button type="button" id="clearScannerCart" class="scanner-clear-button {% if not cart %}d-none{% endif %}"><i class="bi bi-trash3" aria-hidden="true"></i><span>Bersihkan</span></button>
+                </div>
+                <div class="scanner-cart-content">
+                    <div id="scanResult" class="scanner-result mb-2"><div class="alert alert-secondary mb-0"><i class="bi bi-info-circle me-2"></i>Belum ada hasil scan.</div></div>
+                    <div id="scannerEmptyCart" class="scanner-empty-cart {% if cart %}d-none{% endif %}"><div class="scanner-empty-cart-icon"><i class="bi bi-cart-arrow-down" aria-hidden="true"></i></div><strong>Keranjang kosong</strong><span>Arahkan barcode ke kamera untuk menambahkan produk.</span></div>
+                    <div class="scanner-cart-list {% if not cart %}d-none{% endif %}" id="cartList">
+                        {% for item in cart %}
+                        <div class="scanner-cart-item" data-id="{{ item.id }}">
+                            <div class="flex-grow-1"><div class="scanner-cart-item-name">{{ item.nama_barang }}</div><div class="scanner-cart-item-price mt-1">Rp {{ item.harga_jual | id_number }}</div></div>
+                            <div class="scanner-qty-control"><button type="button" data-action="decrease" data-id="{{ item.id }}" aria-label="Kurangi jumlah">−</button><span>{{ item.jumlah }}</span><button type="button" data-action="increase" data-id="{{ item.id }}" aria-label="Tambah jumlah">+</button></div>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-scanned-item" data-action="remove" data-id="{{ item.id }}" aria-label="Hapus {{ item.nama_barang }}"><i class="bi bi-trash3"></i></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="scannerCartSummary" class="scanner-cart-summary {% if not cart %}d-none{% endif %}">
+                        <div class="d-flex justify-content-between small text-secondary mb-2"><span>Subtotal</span><strong id="scannerCartSubtotal">Rp {{ cart | sum(attribute='subtotal') | id_number }}</strong></div>
+                        <div id="scannerMemberDiscountRow" class="d-flex justify-content-between small text-success mb-2 d-none"><span>Diskon Member</span><strong id="scannerCartDiscount">-Rp 0</strong></div>
+                        <div class="d-flex justify-content-between align-items-center mb-3"><strong>Total Bayar</strong><span id="scannerCartTotal" class="scanner-cart-total">Rp {{ cart | sum(attribute='subtotal') | id_number }}</span></div>
+                        <form method="POST" action="{{ url_for('main.checkout') }}" id="scannerCheckoutForm">
+                            <input type="hidden" name="return_to" value="scanner">
+                            <input type="hidden" name="member_id" id="scannerMemberId">
+                            <div class="mb-3"><label class="form-label mb-1" for="scannerCustomerName">Nama Pelanggan <span class="text-muted fw-normal">(opsional)</span></label><input type="text" name="nama_pelanggan" id="scannerCustomerName" class="form-control form-control-sm" maxlength="200" autocomplete="name" placeholder="Masukkan nama pelanggan"><div id="scannerMemberLookupStatus" class="form-text" aria-live="polite"></div></div>
+                            <div id="scannerMemberDiscountGroup" class="mb-3 d-none"><label class="form-label mb-1" for="scannerDiscountPercent">Diskon Member (%)</label><div class="input-group input-group-sm"><input type="number" name="diskon_persen" id="scannerDiscountPercent" class="form-control" min="0" max="0" step="0.01" value="0"><span class="input-group-text">%</span></div><div id="scannerMemberDiscountHint" class="form-text"></div></div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6"><label class="form-label mb-1" for="scannerPaymentMethod">Pembayaran</label><select name="metode_pembayaran" id="scannerPaymentMethod" class="form-select form-select-sm" required><option value="tunai">Tunai</option><option value="qris">QRIS</option><option value="transfer">Transfer</option></select></div>
+                                <div class="col-6"><label class="form-label mb-1" for="scannerAmountPaid">Jumlah Bayar</label><input type="text" inputmode="decimal" name="jumlah_bayar" id="scannerAmountPaid" class="form-control form-control-sm" data-indonesian-number required></div>
+                            </div>
+                            <button type="submit" class="scanner-checkout-button"><i class="bi bi-credit-card" aria-hidden="true"></i>Bayar Sekarang</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="modal fade scanner-checkout-dialog" id="scannerCheckoutModal" tabindex="-1" aria-labelledby="scannerCheckoutTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><div class="scanner-checkout-title"><span class="scanner-checkout-title-icon"><i class="bi bi-receipt-cutoff"></i></span><div><div class="scanner-checkout-kicker">KONFIRMASI PEMBAYARAN</div><h5 class="modal-title mb-0" id="scannerCheckoutTitle">Periksa Pesanan</h5></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+            <div class="modal-body">
+                <div class="scanner-checkout-customer" id="scannerCheckoutCustomer"></div>
+                <div class="scanner-checkout-review" id="scannerCheckoutReview"></div>
+                <div class="d-flex justify-content-between small text-success mt-3"><span>Diskon Member</span><strong id="scannerCheckoutDiscount">-Rp 0</strong></div>
+                <div class="scanner-checkout-total"><span>Total Pembelian</span><strong id="scannerCheckoutTotal"></strong></div>
+                <div class="scanner-checkout-details"><div class="scanner-checkout-detail"><small>Metode Pembayaran</small><strong id="scannerCheckoutMethod"></strong></div><div class="scanner-checkout-detail"><small>Jumlah Dibayar</small><strong id="scannerCheckoutPaid"></strong></div></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Periksa Lagi</button><button type="button" class="btn scanner-checkout-confirm" id="scannerConfirmCheckout"><i class="bi bi-check2-circle me-1"></i>Konfirmasi &amp; Bayar</button></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let scannerActive = false;
+    let lastBarcode = null;
+    const scanResult = document.getElementById('scanResult');
+    const scannerContainer = document.getElementById('scannerContainer');
+    const cartList = document.getElementById('cartList');
+    const clearScannerCart = document.getElementById('clearScannerCart');
+    const scannerEmptyCart = document.getElementById('scannerEmptyCart');
+    const scannerCartSummary = document.getElementById('scannerCartSummary');
+    const scannerCheckoutForm = document.getElementById('scannerCheckoutForm');
+    const scannerCustomerName = document.getElementById('scannerCustomerName');
+    const scannerMemberId = document.getElementById('scannerMemberId');
+    const scannerDiscountGroup = document.getElementById('scannerMemberDiscountGroup');
+    const scannerDiscountInput = document.getElementById('scannerDiscountPercent');
+    const scannerMemberLookupStatus = document.getElementById('scannerMemberLookupStatus');
+    const scannerMemberDiscountHint = document.getElementById('scannerMemberDiscountHint');
+    const scannerMemberDiscountRow = document.getElementById('scannerMemberDiscountRow');
+    const scannerCheckoutModalElement = document.getElementById('scannerCheckoutModal');
+    const scannerCheckoutModal = new bootstrap.Modal(scannerCheckoutModalElement);
+    let scannerCheckoutConfirmed = false;
+    let scannerCartSubtotal = Number('{{ cart | sum(attribute="subtotal") }}' || 0);
+    let scannerDiscountCap = 0;
+    let scannerMemberLookupSequence = 0;
+    let scannerMemberLookupTimer;
+    const scanBeep = new Audio('{{ url_for('static', filename='sound/scanner.mp3') }}');
+    scanBeep.preload = 'auto';
+
+    function playScanBeep() {
+        scanBeep.currentTime = 0;
+        scanBeep.play().catch(() => {});
+    }
+
+    function formatScannerRupiah(value) {
+        return 'Rp ' + Number(value || 0).toLocaleString('id-ID');
+    }
+
+    function recalculateScannerTotals() {
+        const percent = scannerMemberId.value ? Math.min(scannerDiscountCap, Math.max(0, Number(scannerDiscountInput.value) || 0)) : 0;
+        const discount = Math.round(scannerCartSubtotal * percent) / 100;
+        document.getElementById('scannerCartSubtotal').textContent = formatScannerRupiah(scannerCartSubtotal);
+        document.getElementById('scannerCartDiscount').textContent = '-' + formatScannerRupiah(discount);
+        scannerMemberDiscountRow.classList.toggle('d-none', !scannerMemberId.value || discount <= 0);
+        document.getElementById('scannerCartTotal').textContent = formatScannerRupiah(scannerCartSubtotal - discount);
+    }
+
+    function clearScannerMemberMatch() {
+        scannerMemberId.value = '';
+        scannerDiscountCap = 0;
+        scannerDiscountGroup.classList.add('d-none');
+        scannerDiscountInput.value = '0';
+        scannerDiscountInput.max = '0';
+        scannerMemberDiscountHint.textContent = '';
+        recalculateScannerTotals();
+    }
+
+    scannerCustomerName.addEventListener('input', () => {
+        const name = scannerCustomerName.value.trim();
+        const lookupSequence = ++scannerMemberLookupSequence;
+        clearScannerMemberMatch();
+        window.clearTimeout(scannerMemberLookupTimer);
+        scannerMemberLookupStatus.textContent = '';
+        if (!name) return;
+        scannerMemberLookupTimer = window.setTimeout(async () => {
+            try {
+                const response = await fetch(`{{ url_for('main.member_lookup') }}?nama=${encodeURIComponent(name)}`);
+                const data = await response.json();
+                if (lookupSequence !== scannerMemberLookupSequence || scannerCustomerName.value.trim() !== name) return;
+                if (!data.success) {
+                    scannerMemberLookupStatus.textContent = 'Nama ini bukan member aktif; diskon tidak tersedia.';
+                    return;
+                }
+                scannerMemberId.value = data.member.id;
+                scannerDiscountCap = Number(data.member.diskon_persen) || 0;
+                scannerDiscountGroup.classList.remove('d-none');
+                scannerDiscountInput.max = String(scannerDiscountCap);
+                scannerDiscountInput.value = String(scannerDiscountCap);
+                scannerMemberDiscountHint.textContent = `Diskon maksimal ${scannerDiscountCap}% untuk member ini.`;
+                scannerMemberLookupStatus.textContent = 'Member terverifikasi.';
+                recalculateScannerTotals();
+            } catch (error) {
+                if (lookupSequence === scannerMemberLookupSequence) scannerMemberLookupStatus.textContent = 'Data member tidak dapat diperiksa.';
+            }
+        }, 250);
+    });
+
+    scannerDiscountInput.addEventListener('input', () => {
+        const value = Number(scannerDiscountInput.value) || 0;
+        if (value > scannerDiscountCap) scannerDiscountInput.value = String(scannerDiscountCap);
+        recalculateScannerTotals();
+    });
+
+    function renderCart(cart, addedItemId = null) {
+        const safeCart = Array.isArray(cart) ? cart : [];
+        cartList.replaceChildren();
+        scannerCartSubtotal = safeCart.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+
+        safeCart.forEach(item => {
+            const row = document.createElement('div');
+            row.className = `scanner-cart-item${String(item.id) === String(addedItemId) ? ' is-entering' : ''}`;
+            row.dataset.id = item.id;
+
+            const details = document.createElement('div');
+            details.className = 'flex-grow-1';
+            const name = document.createElement('div');
+            name.className = 'scanner-cart-item-name';
+            name.textContent = item.nama_barang;
+            const price = document.createElement('div');
+            price.className = 'scanner-cart-item-price mt-1';
+            price.textContent = formatScannerRupiah(item.harga_jual);
+            details.append(name, price);
+
+            const quantity = document.createElement('div');
+            quantity.className = 'scanner-qty-control';
+            const decrease = document.createElement('button');
+            decrease.type = 'button';
+            decrease.dataset.action = 'decrease';
+            decrease.dataset.id = item.id;
+            decrease.setAttribute('aria-label', 'Kurangi jumlah');
+            decrease.textContent = '−';
+            const count = document.createElement('span');
+            count.textContent = item.jumlah;
+            const increase = document.createElement('button');
+            increase.type = 'button';
+            increase.dataset.action = 'increase';
+            increase.dataset.id = item.id;
+            increase.setAttribute('aria-label', 'Tambah jumlah');
+            increase.textContent = '+';
+            quantity.append(decrease, count, increase);
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-outline-danger remove-scanned-item';
+            remove.dataset.action = 'remove';
+            remove.dataset.id = item.id;
+            remove.setAttribute('aria-label', `Hapus ${item.nama_barang}`);
+            remove.innerHTML = '<i class="bi bi-trash3" aria-hidden="true"></i>';
+            row.append(details, quantity, remove);
+            cartList.appendChild(row);
+        });
+
+        if (!cart || cart.length === 0) {
+            scannerEmptyCart.classList.remove('d-none');
+            cartList.classList.add('d-none');
+            scannerCartSummary.classList.add('d-none');
+            clearScannerCart.classList.add('d-none');
+            return;
+        }
+        scannerEmptyCart.classList.add('d-none');
+        cartList.classList.remove('d-none');
+        scannerCartSummary.classList.remove('d-none');
+        clearScannerCart.classList.remove('d-none');
+        recalculateScannerTotals();
+    }
+
+    function updateScannerCart(action, barangId, jumlah = 0, showToast = true) {
+        return fetch('{{ url_for('main.update_cart') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action, barang_id: barangId, jumlah: jumlah })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderCart(data.cart);
+                showMessage(action === 'remove' ? 'Produk berhasil dihapus dari keranjang.' : 'Jumlah produk diperbarui.', 'info');
+                if (action === 'remove' && showToast) window.showAppToast('Produk berhasil dihapus dari keranjang.');
+            } else {
+                window.showAppToast(data.message || 'Jumlah produk gagal diperbarui.', 'danger');
+            }
+        });
+    }
+
+    cartList.addEventListener('click', async function(event) {
+        const control = event.target.closest('[data-action]');
+        if (!control) return;
+        const row = control.closest('.scanner-cart-item');
+        const currentQuantity = Number(row.querySelector('.scanner-qty-control span').textContent);
+        if (control.dataset.action === 'increase') {
+            updateScannerCart('update', control.dataset.id, currentQuantity + 1, false);
+            return;
+        }
+        if (control.dataset.action === 'decrease' && currentQuantity > 1) {
+            updateScannerCart('update', control.dataset.id, currentQuantity - 1, false);
+            return;
+        }
+
+        const confirmed = await window.confirmAction('Hapus produk ini dari keranjang?', { title: 'Hapus Produk', confirmText: 'Ya, Hapus' });
+        if (!confirmed) return;
+        row.classList.add('is-removing');
+        await new Promise(resolve => window.setTimeout(resolve, 200));
+        updateScannerCart('remove', control.dataset.id);
+    });
+
+    clearScannerCart.addEventListener('click', async function() {
+        const confirmed = await window.confirmAction('Semua produk di keranjang scanner akan dihapus.', { title: 'Kosongkan Keranjang', confirmText: 'Ya, Kosongkan' });
+        if (!confirmed) return;
+        const itemIds = [...cartList.querySelectorAll('.remove-scanned-item')].map(button => button.dataset.id);
+        for (const itemId of itemIds) {
+            await updateScannerCart('remove', itemId, 0, false);
+        }
+        window.showAppToast('Keranjang scanner berhasil dikosongkan.');
+    });
+
+    scannerCheckoutForm.addEventListener('submit', async event => {
+        if (scannerCheckoutConfirmed) return;
+        event.preventDefault();
+        const customerName = scannerCustomerName.value.trim();
+        if (customerName && !scannerMemberId.value) {
+            window.clearTimeout(scannerMemberLookupTimer);
+            const lookupSequence = ++scannerMemberLookupSequence;
+            try {
+                const response = await fetch(`{{ url_for('main.member_lookup') }}?nama=${encodeURIComponent(customerName)}`);
+                const data = await response.json();
+                if (lookupSequence === scannerMemberLookupSequence && scannerCustomerName.value.trim() === customerName && data.success) {
+                    scannerMemberId.value = data.member.id;
+                    scannerDiscountCap = Number(data.member.diskon_persen) || 0;
+                    scannerDiscountGroup.classList.remove('d-none');
+                    scannerDiscountInput.max = String(scannerDiscountCap);
+                    scannerDiscountInput.value = String(scannerDiscountCap);
+                    scannerMemberDiscountHint.textContent = `Diskon maksimal ${scannerDiscountCap}% untuk member ini.`;
+                    scannerMemberLookupStatus.textContent = 'Member terverifikasi.';
+                    recalculateScannerTotals();
+                }
+            } catch (error) {
+                scannerMemberLookupStatus.textContent = 'Data member tidak dapat diperiksa.';
+            }
+        }
+
+        const review = document.getElementById('scannerCheckoutReview');
+        review.replaceChildren();
+        const rows = [...cartList.querySelectorAll('.scanner-cart-item')].map(row => ({
+            name: row.querySelector('.scanner-cart-item-name').textContent.trim(),
+            quantity: Number(row.querySelector('.scanner-qty-control span').textContent),
+            price: Number(row.querySelector('.scanner-cart-item-price').textContent.replace(/[^\d]/g, ''))
+        }));
+        rows.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'scanner-checkout-review-row';
+            const name = document.createElement('span');
+            name.textContent = `${item.name} × ${item.quantity}`;
+            const subtotal = document.createElement('strong');
+            subtotal.textContent = formatScannerRupiah(item.price * item.quantity);
+            row.append(name, subtotal);
+            review.appendChild(row);
+        });
+
+        const total = rows.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const discountPercent = scannerMemberId.value ? Math.min(scannerDiscountCap, Math.max(0, Number(scannerDiscountInput.value) || 0)) : 0;
+        const discount = Math.round(total * discountPercent) / 100;
+        document.getElementById('scannerCheckoutDiscount').textContent = '-' + formatScannerRupiah(discount);
+        document.getElementById('scannerCheckoutTotal').textContent = formatScannerRupiah(total - discount);
+        document.getElementById('scannerCheckoutMethod').textContent = scannerCheckoutForm.elements.metode_pembayaran.selectedOptions[0].textContent;
+        document.getElementById('scannerCheckoutPaid').textContent = formatScannerRupiah(window.parseIndonesianNumber(document.getElementById('scannerAmountPaid').value));
+        document.getElementById('scannerCheckoutCustomer').textContent = customerName ? `Pelanggan: ${customerName}${scannerMemberId.value ? ` (Member, diskon ${discountPercent}%)` : ''}` : 'Nama pelanggan belum diisi.';
+        scannerCheckoutModal.show();
+    });
+
+    document.getElementById('scannerConfirmCheckout').addEventListener('click', () => {
+        scannerCheckoutConfirmed = true;
+        scannerCheckoutModal.hide();
+        scannerCheckoutForm.requestSubmit();
+    });
+
+    function showMessage(message, type = 'info') {
+        const alertClass = type === 'success' ? 'alert-success' : type === 'danger' ? 'alert-danger' : 'alert-info';
+        scanResult.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+    }
+
+    let scanCooldown = false;
+    let scannerStatus = document.getElementById('scannerStatus');
+
+    function setScannerStatus(text, type = 'info') {
+        if (!scannerStatus) return;
+        scannerStatus.textContent = `Status: ${text}`;
+        scannerStatus.className = type === 'danger' ? 'mt-2 text-danger small' : type === 'success' ? 'mt-2 text-success small' : 'mt-2 text-muted small';
+    }
+
+    function startScanner() {
+        if (scannerActive) return;
+        scannerActive = true;
+        setScannerStatus('menyambungkan kamera...', 'info');
+
+        if (!window.Quagga) {
+            showMessage('QuaggaJS tidak tersedia. Periksa koneksi internet atau muat ulang halaman.', 'danger');
+            scannerActive = false;
+            setScannerStatus('offline', 'danger');
+            return;
+        }
+
+        Quagga.init({
+            inputStream: {
+                type: 'LiveStream',
+                target: scannerContainer,
+                constraints: {
+                    facingMode: 'environment',
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }
+            },
+            frequency: 10,
+            decoder: {
+                readers: ['ean_reader', 'code_128_reader', 'code_39_reader', 'upc_reader', 'upc_e_reader']
+            },
+            locate: true,
+            locator: {
+                patchSize: 'medium',
+                halfSample: true
+            }
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                showMessage('Gagal memulai scanner: ' + err.message, 'danger');
+                scannerActive = false;
+                setScannerStatus('offline', 'danger');
+                return;
+            }
+
+            Quagga.start();
+            showMessage('Scanner aktif. Arahkan kamera ke barcode.', 'success');
+            setScannerStatus('aktif', 'success');
+        });
+
+        Quagga.onDetected(handleDetected);
+    }
+
+    function stopScanner() {
+        if (!scannerActive) return;
+        scannerActive = false;
+        Quagga.offDetected(handleDetected);
+        try {
+            Quagga.stop();
+        } catch (ignored) {}
+        scannerContainer.innerHTML = '';
+        showMessage('Scanner dihentikan.', 'info');
+        setScannerStatus('offline', 'info');
+    }
+
+    function handleDetected(result) {
+        if (!result || !result.codeResult || !result.codeResult.code) {
+            return;
+        }
+
+        if (scanCooldown) {
+            return;
+        }
+
+        const barcode = result.codeResult.code;
+        if (barcode === lastBarcode) {
+            return;
+        }
+        lastBarcode = barcode;
+        scanCooldown = true;
+        setScannerStatus('barcode terdeteksi, memproses...', 'info');
+        showMessage('Barcode terdeteksi: ' + barcode + '. Memeriksa produk...', 'info');
+
+        fetch('{{ url_for('main.scan_barcode') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ barcode: barcode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.barang) {
+                showMessage(`Produk ditemukan: <strong>${data.barang.nama_barang}</strong> (Rp ${parseFloat(data.barang.harga_jual).toLocaleString('id-ID')})`, 'success');
+                window.showAppToast(`${data.barang.nama_barang} ditambahkan ke keranjang.`);
+                playScanBeep();
+                renderCart(data.cart, data.barang.id);
+            } else {
+                const message = data.message || 'Barang tidak ditemukan.';
+                showMessage(message, 'danger');
+                window.showAppToast(message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            showMessage('Gagal memeriksa barcode. Coba ulangi.', 'danger');
+        })
+        .finally(() => {
+            setTimeout(() => {
+                scanCooldown = false;
+                lastBarcode = null;
+                setScannerStatus('siap scan ulang', 'success');
+            }, 700);
+        });
+    }
+
+    document.getElementById('startScanner').addEventListener('click', startScanner);
+    document.getElementById('stopScanner').addEventListener('click', stopScanner);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        startScanner();
+    });
+</script>
+{% endblock %}

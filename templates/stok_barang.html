@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Barang - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .stock-page { --stock-radius: 20px; }
+    .stock-stats { display: grid; gap: 0.9rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 1.35rem; }
+    .stock-stat { background: #fff; border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; padding: 1.05rem 1.15rem; position: relative; }
+    .stock-stat::after { background: var(--tone-soft); border-radius: 50%; content: ''; height: 80px; opacity: 0.85; position: absolute; right: -34px; top: -34px; width: 80px; }
+    .stock-stat-top { align-items: center; display: flex; justify-content: space-between; position: relative; z-index: 1; }
+    .stock-stat-icon { align-items: center; background: var(--tone-soft); border-radius: 11px; color: var(--tone); display: inline-flex; font-size: 0.95rem; height: 38px; justify-content: center; width: 38px; }
+    .stock-stat-value { color: var(--ink); font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-top: 0.7rem; position: relative; z-index: 1; }
+    .stock-stat-label { color: var(--gray); font-size: 0.68rem; font-weight: 700; margin-top: 0.2rem; position: relative; z-index: 1; }
+    .stock-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--stock-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .stock-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.9rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .stock-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .stock-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .stock-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .stock-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .stock-chart-metrics { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .stock-chart-metric { background: #f8fafc; border: 1px solid #e8edf4; border-radius: 999px; color: #64748b; font-size: 0.65rem; font-weight: 700; padding: 0.32rem 0.6rem; white-space: nowrap; }
+    .stock-chart-metric strong { color: var(--ink); font-weight: 800; margin-right: 0.15rem; }
+    .stock-chart-body { padding: 1.1rem 1.3rem 1.3rem; }
+    .stock-chart-legend { align-items: center; color: #74818e; display: flex; flex-wrap: wrap; font-size: 0.66rem; gap: 0.85rem; margin-bottom: 0.8rem; }
+    .stock-chart-legend-item { align-items: center; display: inline-flex; gap: 0.35rem; }
+    .stock-chart-dot { background: #10b981; border-radius: 50%; height: 8px; width: 8px; }
+    .stock-chart-dot.is-low { background: #f59e0b; }
+    .stock-chart-dot.is-empty { background: #f43f5e; }
+    .stock-chart-list { border-top: 1px solid #f1f5f9; max-height: 520px; overflow: auto; padding-right: 0.2rem; }
+    .stock-chart-row { --stock-color: #10b981; align-items: center; border-bottom: 1px solid #f1f5f9; display: grid; gap: 1rem; grid-template-columns: minmax(145px, 230px) minmax(90px, 1fr) 76px; min-height: 57px; padding: 0.55rem 0.15rem; }
+    .stock-chart-row.is-low { --stock-color: #f59e0b; }
+    .stock-chart-row.is-empty { --stock-color: #f43f5e; }
+    .stock-chart-product { min-width: 0; }
+    .stock-chart-name { color: #34485c; display: block; font-size: 0.73rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .stock-chart-code { color: #98a2ad; display: block; font-size: 0.62rem; margin-top: 0.12rem; }
+    .stock-chart-track { background: #eef2f6; border-radius: 999px; height: 9px; overflow: hidden; }
+    .stock-chart-bar { background: var(--stock-color); border-radius: inherit; height: 100%; min-width: 0; transition: width 0.35s ease; }
+    .stock-chart-value { color: var(--stock-color); font-size: 0.72rem; font-weight: 800; text-align: right; white-space: nowrap; }
+    .stock-chart-empty { color: var(--muted); padding: 2rem 0; text-align: center; }
+    .stock-table { font-size: 0.78rem; margin: 0; }
+    .stock-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.75rem 1.15rem; text-transform: uppercase; white-space: nowrap; }
+    .stock-table tbody td { border-color: #f1f5f9; padding: 0.8rem 1.15rem; vertical-align: middle; }
+    .stock-table tbody tr:hover { background: #fafbff; }
+    .stock-product-name { color: var(--ink); display: block; font-weight: 800; }
+    .stock-product-code { color: var(--muted); display: block; font-size: 0.62rem; margin-top: 0.1rem; }
+    .stock-badge { align-items: center; border-radius: 999px; display: inline-flex; font-size: 0.64rem; font-weight: 800; gap: 0.3rem; padding: 0.28rem 0.55rem; white-space: nowrap; }
+    .stock-badge.is-safe { background: #ecfdf5; color: #047857; }
+    .stock-badge.is-low { background: #fffbeb; color: #b45309; }
+    .stock-badge.is-empty { background: #fff1f2; color: #be123c; }
+    .stock-low-list { padding: 0.85rem 1.3rem 1.3rem; }
+    .stock-low-item { align-items: center; border-bottom: 1px solid #f1f5f9; display: flex; gap: 0.75rem; justify-content: space-between; padding: 0.75rem 0; }
+    .stock-low-item:last-child { border-bottom: 0; }
+    .stock-low-avatar { align-items: center; background: #fff7ed; border-radius: 10px; color: #c2410c; display: inline-flex; flex: 0 0 34px; font-size: 0.72rem; font-weight: 800; height: 34px; justify-content: center; width: 34px; }
+    .stock-low-name { color: var(--ink); display: block; font-size: 0.76rem; font-weight: 800; }
+    .stock-low-category { color: var(--muted); display: block; font-size: 0.64rem; margin-top: 0.08rem; }
+    .stock-low-empty { color: #047857; padding: 1.4rem 0; text-align: center; }
+    .stock-low-empty i { display: block; font-size: 1.6rem; margin-bottom: 0.4rem; }
+    @media (max-width: 767.98px) {
+        .stock-stats { grid-template-columns: 1fr; gap: 0.65rem; }
+        .stock-stat { padding: 0.9rem 1rem; }
+        .stock-panel-head { padding: 0.95rem 1rem; }
+        .stock-chart-body { padding: 1rem; }
+        .stock-chart-row { gap: 0.55rem; grid-template-columns: minmax(100px, 1fr) minmax(55px, 1.1fr) 52px; }
+        .stock-chart-name { font-size: 0.68rem; }
+        .stock-chart-code { font-size: 0.59rem; }
+        .stock-chart-track { height: 8px; }
+        .stock-chart-value { font-size: 0.66rem; }
+        .stock-low-list { padding: 0.75rem 1rem 1rem; }
+    }
+</style>
+
+<main class="stock-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Manajemen</span>
+                <h1>Stok Barang</h1>
+                <p>Pantau stok produk dan identifikasi barang yang perlu diisi ulang.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-sliders" aria-hidden="true"></i>Batas rendah: {{ low_stock_threshold }} unit</span>
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('main.barang') }}" class="btn btn-outline-primary"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Kelola Barang</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="stock-stats" aria-label="Ringkasan stok">
+        <article class="stock-stat" style="--tone:#6366f1; --tone-soft:#eef2ff;">
+            <div class="stock-stat-top"><span class="stock-stat-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span></div>
+            <div class="stock-stat-value">{{ barang_list|length }}</div>
+            <div class="stock-stat-label">Total Produk</div>
+        </article>
+        <article class="stock-stat" style="--tone:#10b981; --tone-soft:#ecfdf5;">
+            <div class="stock-stat-top"><span class="stock-stat-icon"><i class="bi bi-boxes" aria-hidden="true"></i></span></div>
+            <div class="stock-stat-value">{{ total_stok }}</div>
+            <div class="stock-stat-label">Total Unit Stok</div>
+        </article>
+        <article class="stock-stat" style="--tone:#f43f5e; --tone-soft:#fff1f2;">
+            <div class="stock-stat-top"><span class="stock-stat-icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span></div>
+            <div class="stock-stat-value">{{ low_stock|length }}</div>
+            <div class="stock-stat-label">Produk Stok Rendah</div>
+        </article>
+    </section>
+
+    <section class="stock-panel mb-4" aria-labelledby="stockChartTitle">
+        <div class="stock-panel-head">
+            <div class="stock-panel-title">
+                <span class="stock-panel-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></span>
+                <div>
+                    <h2 id="stockChartTitle">Grafik Stok Seluruh Produk</h2>
+                    <p>Perbandingan jumlah stok setiap barang, diurutkan dari stok terbanyak.</p>
+                </div>
+            </div>
+            <div class="stock-chart-metrics">
+                <span class="stock-chart-metric"><strong>{{ barang_list|length }}</strong> produk</span>
+                <span class="stock-chart-metric"><strong>{{ total_stok }}</strong> total unit</span>
+                <span class="stock-chart-metric"><strong>{{ low_stock|length }}</strong> stok rendah</span>
+            </div>
+        </div>
+        <div class="stock-chart-body">
+            <div class="stock-chart-legend" aria-label="Keterangan warna grafik">
+                <span class="stock-chart-legend-item"><span class="stock-chart-dot"></span>Stok aman</span>
+                <span class="stock-chart-legend-item"><span class="stock-chart-dot is-low"></span>Stok rendah</span>
+                <span class="stock-chart-legend-item"><span class="stock-chart-dot is-empty"></span>Stok habis</span>
+            </div>
+            {% if stok_grafik %}
+            <div class="stock-chart-list">
+                {% for item in stok_grafik %}
+                <div class="stock-chart-row {% if item.stok <= 0 %}is-empty{% elif item.stok <= low_stock_threshold %}is-low{% endif %}">
+                    <div class="stock-chart-product">
+                        <span class="stock-chart-name" title="{{ item.nama_barang }}">{{ item.nama_barang }}</span>
+                        <span class="stock-chart-code">{{ item.kode_barang }}</span>
+                    </div>
+                    <div class="stock-chart-track" role="progressbar" aria-label="Stok {{ item.nama_barang }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ item.persentase|round|int }}">
+                        <div class="stock-chart-bar" style="width: {{ item.persentase }}%"></div>
+                    </div>
+                    <span class="stock-chart-value">{{ item.stok }} unit</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="stock-chart-empty"><i class="bi bi-inbox me-2" aria-hidden="true"></i>Belum ada produk untuk ditampilkan.</div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <section class="stock-panel" aria-labelledby="stockListTitle">
+                <div class="stock-panel-head">
+                    <div class="stock-panel-title">
+                        <span class="stock-panel-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="stockListTitle">Daftar Barang</h2>
+                            <p>Seluruh produk beserta stok saat ini.</p>
+                        </div>
+                    </div>
+                    <span class="chip"><i class="bi bi-list-ul" aria-hidden="true"></i>{{ barang_list|length }} produk</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table stock-table">
+                        <thead>
+                            <tr><th>Produk</th><th>Kategori</th><th>Stok</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for barang in barang_list %}
+                            <tr>
+                                <td>
+                                    <span class="stock-product-name">{{ barang.nama_barang }}</span>
+                                    <span class="stock-product-code">{{ barang.kode_barang }}</span>
+                                </td>
+                                <td>{{ barang.nama_kategori }}</td>
+                                <td class="fw-bold">{{ barang.stok }}</td>
+                                <td>
+                                    <span class="stock-badge {% if barang.stok <= 0 %}is-empty{% elif barang.stok <= low_stock_threshold %}is-low{% else %}is-safe{% endif %}">
+                                        <i class="bi {% if barang.stok <= 0 %}bi-x-circle-fill{% elif barang.stok <= low_stock_threshold %}bi-exclamation-circle-fill{% else %}bi-check-circle-fill{% endif %}" aria-hidden="true"></i>
+                                        {{ 'Habis' if barang.stok <= 0 else 'Rendah' if barang.stok <= low_stock_threshold else 'Aman' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="stock-chart-empty"><i class="bi bi-inbox me-2" aria-hidden="true"></i>Tidak ada barang ditemukan.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="stock-panel" aria-labelledby="stockLowTitle">
+                <div class="stock-panel-head">
+                    <div class="stock-panel-title">
+                        <span class="stock-panel-icon" style="background:#fff1f2;color:#be123c;"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="stockLowTitle">Stok Rendah</h2>
+                            <p>Produk yang perlu segera diisi ulang.</p>
+                        </div>
+                    </div>
+                    <span class="stock-badge is-low">{{ low_stock|length }}</span>
+                </div>
+                <div class="stock-low-list">
+                    {% for item in low_stock %}
+                    <div class="stock-low-item">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="stock-low-avatar">{{ (item.nama_barang or 'P')[:1]|upper }}</span>
+                            <div>
+                                <span class="stock-low-name">{{ item.nama_barang }}</span>
+                                <span class="stock-low-category">{{ item.nama_kategori }}</span>
+                            </div>
+                        </div>
+                        <span class="stock-badge {% if item.stok <= 0 %}is-empty{% else %}is-low{% endif %}">{{ item.stok }} unit</span>
+                    </div>
+                    {% else %}
+                    <div class="stock-low-empty"><i class="bi bi-check-circle-fill" aria-hidden="true"></i>Semua stok dalam kondisi aman.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Barcode Produk - Kasir POS{% endblock %}
+
+{% block content %}
+<style>
+    .barcode-page { --barcode-radius: 20px; }
+    .barcode-panel { background: #fff; border: 1px solid var(--border); border-radius: var(--barcode-radius); box-shadow: var(--shadow); overflow: hidden; }
+    .barcode-panel-head { align-items: center; background: linear-gradient(135deg, #ffffff 0%, #fbfcff 100%); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: space-between; padding: 1.05rem 1.3rem; }
+    .barcode-panel-title { align-items: center; display: flex; gap: 0.75rem; }
+    .barcode-panel-icon { align-items: center; background: var(--brand-soft); border-radius: 12px; color: var(--brand-ink); display: inline-flex; flex: 0 0 40px; font-size: 0.98rem; height: 40px; justify-content: center; width: 40px; }
+    .barcode-panel-title h2 { color: var(--ink); font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+    .barcode-panel-title p { color: var(--muted); font-size: 0.67rem; margin: 0.1rem 0 0; }
+    .barcode-search-form { align-items: center; display: flex; gap: 0.45rem; width: min(100%, 280px); }
+    .barcode-search-input { background: #fbfcfe; border: 1px solid #dfe5ef; border-radius: 10px; color: var(--ink); font-size: 0.76rem; height: 36px; min-width: 0; padding: 0.35rem 0.7rem; width: 100%; }
+    .barcode-search-input:focus { background: #fff; border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12); outline: 0; }
+    .barcode-search-button { align-items: center; display: inline-flex; flex: 0 0 auto; height: 36px; justify-content: center; padding: 0.35rem 0.7rem; white-space: nowrap; }
+    .barcode-table { font-size: 0.75rem; margin: 0; min-width: 680px; }
+    .barcode-table thead th { background: #f8fafc; color: #64748b; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.72rem 0.9rem; text-transform: uppercase; white-space: nowrap; }
+    .barcode-table tbody td { border-color: #f1f5f9; padding: 0.72rem 0.9rem; vertical-align: middle; }
+    .barcode-table tbody tr:hover { background: #fafbff; }
+    .barcode-product { align-items: center; display: flex; gap: 0.6rem; min-width: 170px; }
+    .barcode-product-avatar { align-items: center; background: var(--brand-soft); border-radius: 9px; color: var(--brand-ink); display: inline-flex; flex: 0 0 32px; font-size: 0.7rem; font-weight: 800; height: 32px; justify-content: center; width: 32px; }
+    .barcode-product-name { color: var(--ink); display: block; font-weight: 800; }
+    .barcode-product-code { color: var(--muted); display: block; font-size: 0.6rem; margin-top: 0.06rem; }
+    .barcode-ean { color: #475569; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+    .barcode-price { color: var(--ink); font-weight: 800; white-space: nowrap; }
+    .barcode-row-actions { align-items: center; display: flex; gap: 0.25rem; justify-content: flex-end; white-space: nowrap; }
+    .barcode-row-action { align-items: center; aspect-ratio: 1; border: 1px solid transparent; border-radius: 8px; display: inline-flex; font-size: 0.76rem; height: 28px; justify-content: center; padding: 0; text-decoration: none; transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease; width: 28px; }
+    .barcode-row-action:hover { transform: translateY(-1px); }
+    .barcode-row-action:focus-visible { outline: 3px solid rgba(99, 102, 241, 0.22); outline-offset: 2px; }
+    .barcode-row-action-print { background: #ecfdf5; border-color: #d1fae5; color: #047857; }
+    .barcode-row-action-print:hover { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+    .barcode-row-action-pdf { background: #fff1f2; border-color: #ffe4e6; color: #be123c; }
+    .barcode-row-action-pdf:hover { background: #ffe4e6; border-color: #fecdd3; color: #9f1239; }
+    .barcode-row-action-edit { background: #eef2ff; border-color: #e0e7ff; color: #4338ca; }
+    .barcode-row-action-edit:hover { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+    .barcode-row-action-delete { background: #fff7ed; border-color: #ffedd5; color: #c2410c; }
+    .barcode-row-action-delete:hover { background: #ffedd5; border-color: #fed7aa; color: #9a3412; }
+    .barcode-form-body { padding: 1.3rem; }
+    .barcode-tip { align-items: flex-start; background: linear-gradient(135deg, #f8faff, #eef2ff); border: 1px solid var(--brand-border); border-radius: 13px; color: #475569; display: flex; font-size: 0.7rem; gap: 0.55rem; line-height: 1.55; margin-top: 1rem; padding: 0.75rem 0.85rem; }
+    .barcode-tip i { color: var(--brand-ink); flex: 0 0 auto; margin-top: 0.1rem; }
+    .barcode-empty { color: var(--muted); padding: 2.75rem 1rem !important; text-align: center; }
+    .barcode-empty i { color: #cbd5e1; display: block; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .barcode-print-area { display: none; }
+    @media print {
+        @page { margin: 8mm; size: A4; }
+        body * { visibility: hidden !important; }
+        #barcodePrintArea, #barcodePrintArea * { visibility: visible !important; }
+        #barcodePrintArea { display: flex !important; flex-wrap: wrap; gap: 2mm; left: 0; position: absolute; top: 0; width: 194mm; }
+        .barcode-label { align-items: center; border: 1px dashed #999; box-sizing: border-box; display: flex; flex-direction: column; height: 30mm; justify-content: center; overflow: hidden; padding: 2mm; text-align: center; width: 50mm; }
+        .barcode-label-name { font-size: 9pt; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .barcode-label svg { height: 17mm; max-width: 100%; }
+        .barcode-label-price { font-size: 8pt; }
+    }
+    @media (max-width: 767.98px) {
+        .barcode-panel-head { padding: 0.95rem 1rem; }
+        .barcode-search-form { width: 100%; }
+        .barcode-form-body { padding: 1.05rem; }
+    }
+</style>
+
+<main class="barcode-page">
+    <div class="page-heading">
+        <div class="page-heading-copy">
+            <span class="page-heading-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
+            <div>
+                <span class="page-kicker">Manajemen</span>
+                <h1>Barcode Produk</h1>
+                <p>Buat barcode sekaligus daftarkan produk ke katalog.</p>
+            </div>
+        </div>
+        <div class="page-heading-actions">
+            <span class="chip"><i class="bi bi-printer" aria-hidden="true"></i>Cetak &amp; unduh label</span>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-7">
+            <section class="barcode-panel" aria-labelledby="barcodeListTitle">
+                <div class="barcode-panel-head">
+                    <div class="barcode-panel-title">
+                        <span class="barcode-panel-icon"><i class="bi bi-upc-scan" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="barcodeListTitle">Daftar Barcode</h2>
+                            <p>Kelola label barcode produk toko.</p>
+                        </div>
+                    </div>
+                    <form method="GET" action="{{ url_for('main.barcode_produk') }}" class="barcode-search-form">
+                        <input type="text" name="search" class="form-control form-control-sm barcode-search-input" placeholder="Cari produk..." value="{{ search_query }}" aria-label="Cari produk">
+                        <button class="btn btn-sm btn-primary barcode-search-button"><i class="bi bi-search me-1" aria-hidden="true"></i>Cari</button>
+                    </form>
+                </div>
+                <div class="table-responsive">
+                    <table class="table barcode-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Produk</th>
+                                <th>Barcode</th>
+                                <th>Kategori</th>
+                                <th>Harga</th>
+                                <th class="text-end">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in barcode_list %}
+                            <tr>
+                                <td>
+                                    <div class="barcode-product">
+                                        <span class="barcode-product-avatar">{{ (item.nama_barang or 'P')[:1]|upper }}</span>
+                                        <div>
+                                            <span class="barcode-product-name">{{ item.nama_barang }}</span>
+                                            <span class="barcode-product-code">{{ item.kode_barang or '-' }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="barcode-ean">{{ item.ean13 }}</span></td>
+                                <td>{{ item.nama_kategori }}</td>
+                                <td><span class="barcode-price">Rp {{ item.harga_jual | id_number }}</span></td>
+                                <td>
+                                    <div class="barcode-row-actions">
+                                        <button type="button" class="barcode-row-action barcode-row-action-print" onclick="printBarcode(this)" data-name="{{ item.nama_barang }}" data-ean13="{{ item.ean13 }}" data-price="{{ item.harga_jual | int }}" data-quantity="{{ item.jumlah_label }}" title="Cetak {{ item.jumlah_label }} label" aria-label="Cetak barcode {{ item.nama_barang }}">
+                                            <i class="bi bi-printer" aria-hidden="true"></i>
+                                        </button>
+                                        <a href="{{ url_for('main.download_barcode_produk_pdf', barcode_id=item.id) }}" class="barcode-row-action barcode-row-action-pdf" title="Unduh PDF {{ item.jumlah_label }} label {{ item.nama_barang }}" aria-label="Unduh PDF {{ item.nama_barang }}">
+                                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                                        </a>
+                                        <button type="button" class="barcode-row-action barcode-row-action-edit" title="Edit {{ item.nama_barang }}" aria-label="Edit {{ item.nama_barang }}" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}">
+                                            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                        </button>
+                                        <form method="POST" action="{{ url_for('main.barcode_produk', search=search_query) }}" class="d-inline" data-confirm-message="Barcode produk {{ item.nama_barang }} akan dihapus." data-confirm-title="Hapus Barcode Produk" data-confirm-button="Ya, Hapus">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="barcode_id" value="{{ item.id }}">
+                                            <button type="submit" class="barcode-row-action barcode-row-action-delete" title="Hapus {{ item.nama_barang }}" aria-label="Hapus {{ item.nama_barang }}">
+                                                <i class="bi bi-trash3" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="barcode-empty"><i class="bi bi-upc" aria-hidden="true"></i>Belum ada barcode produk. Tambahkan produk baru di samping.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% for item in barang_list %}
+                <div class="modal fade" id="editModal{{ item.id }}" tabindex="-1" aria-labelledby="editBarcodeTitle{{ item.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.barcode_produk', search=search_query) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editBarcodeTitle{{ item.id }}"><i class="bi bi-upc-scan me-2 text-primary" aria-hidden="true"></i>Edit Barcode Produk</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="action" value="edit">
+                                    <input type="hidden" name="barcode_id" value="{{ item.id }}">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Nama Produk</label>
+                                            <input type="text" name="nama_barang" class="form-control" data-auto-uppercase value="{{ item.nama_barang }}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Kategori</label>
+                                            <select name="kategori_id" class="form-select" required>
+                                                {% for kategori in kategori_list %}
+                                                <option value="{{ kategori.id }}" {% if kategori.id == item.kategori_id %}selected{% endif %}>{{ kategori.nama_kategori }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Harga Beli</label>
+                                            <input type="text" inputmode="decimal" name="harga_beli" class="form-control" data-indonesian-number value="{{ item.harga_beli }}" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Harga Jual</label>
+                                            <input type="text" inputmode="decimal" name="harga_jual" class="form-control" data-indonesian-number value="{{ item.harga_jual }}" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Stok</label>
+                                            <input type="number" name="stok" class="form-control" value="{{ item.stok }}" required>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Jumlah Label</label>
+                                            <input type="number" name="jumlah_label" class="form-control" value="{{ item.jumlah_label }}" required>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Deskripsi</label>
+                                            <textarea name="deskripsi" class="form-control" rows="3">{{ item.deskripsi }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </section>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <section class="barcode-panel" aria-labelledby="barcodeAddTitle">
+                <div class="barcode-panel-head">
+                    <div class="barcode-panel-title">
+                        <span class="barcode-panel-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+                        <div>
+                            <h2 id="barcodeAddTitle">Tambah Barcode Produk</h2>
+                            <p>Produk baru otomatis mendapat barcode.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="barcode-form-body">
+                    <form method="POST" action="{{ url_for('main.barcode_produk', search=search_query) }}">
+                        <input type="hidden" name="action" value="add">
+                        <div class="mb-3">
+                            <label class="form-label" for="barcodeProductName">Nama Produk</label>
+                            <input type="text" id="barcodeProductName" name="nama_barang" class="form-control" data-auto-uppercase maxlength="200" placeholder="Nama produk" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="barcodeProductCategory">Kategori</label>
+                            <select id="barcodeProductCategory" name="kategori_id" class="form-select" required>
+                                <option value="" selected disabled>Pilih kategori</option>
+                                {% for kategori in kategori_list %}
+                                <option value="{{ kategori.id }}">{{ kategori.nama_kategori }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="barcodeProductCost">Harga Beli</label>
+                                <input type="text" inputmode="decimal" id="barcodeProductCost" name="harga_beli" class="form-control" data-indonesian-number required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="barcodeProductPrice">Harga Jual</label>
+                                <input type="text" inputmode="decimal" id="barcodeProductPrice" name="harga_jual" class="form-control" data-indonesian-number required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-6">
+                                <label class="form-label" for="barcodeProductStock">Stok</label>
+                                <input type="number" id="barcodeProductStock" name="stok" class="form-control" min="0" step="1" value="0" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="barcodeLabelCount">Jumlah Label</label>
+                                <input type="number" id="barcodeLabelCount" name="jumlah_label" class="form-control" min="1" max="1000" value="1" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="barcodeProductDescription">Deskripsi</label>
+                            <textarea id="barcodeProductDescription" name="deskripsi" class="form-control" rows="3" placeholder="Deskripsi produk (opsional)"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100" {% if not kategori_list %}disabled{% endif %}><i class="bi bi-upc-scan me-2" aria-hidden="true"></i>Buat Barcode &amp; Tambah Produk</button>
+                    </form>
+                    <div class="barcode-tip">
+                        <i class="bi bi-lightbulb-fill" aria-hidden="true"></i>
+                        <span>Gunakan tombol printer untuk mencetak label, atau unduh PDF untuk menyimpan label barcode.</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    <div id="barcodePrintArea" class="barcode-print-area" aria-hidden="true"></div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+    function printBarcode(button) {
+        const printArea = document.getElementById('barcodePrintArea');
+        const ean13 = button.dataset.ean13;
+        const quantity = Math.max(1, Number.parseInt(button.dataset.quantity, 10) || 1);
+
+        if (!window.JsBarcode) {
+            window.alert('Generator barcode tidak tersedia. Periksa koneksi internet lalu coba lagi.');
+            return;
+        }
+
+        printArea.replaceChildren();
+        for (let index = 0; index < quantity; index += 1) {
+            const label = document.createElement('div');
+            const name = document.createElement('div');
+            const barcode = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const price = document.createElement('div');
+
+            label.className = 'barcode-label';
+            name.className = 'barcode-label-name';
+            name.textContent = button.dataset.name;
+            price.className = 'barcode-label-price';
+            price.textContent = `Rp ${Number(button.dataset.price).toLocaleString('id-ID')}`;
+            label.append(name, barcode, price);
+            printArea.append(label);
+            window.JsBarcode(barcode, ean13, {
+                format: /^\d{13}$/.test(ean13) ? 'EAN13' : 'CODE128',
+                width: 1.5,
+                height: 45,
+                displayValue: true,
+                fontSize: 11,
+                margin: 0
+            });
+        }
+
+        window.onafterprint = () => printArea.replaceChildren();
+        window.print();
+    }
+</script>
+{% endblock %}
